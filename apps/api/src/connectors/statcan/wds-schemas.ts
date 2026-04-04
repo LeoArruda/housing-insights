@@ -1,22 +1,22 @@
 import { z } from "zod";
 
-/** Single cube row from getAllCubesListLite (summary). */
+/** Single cube row from getAllCubesListLite (summary). StatCan often sends explicit JSON `null` for optional fields; use `.nullish()` (not `.optional()` alone), which rejects only invalid types. */
 export const cubeListItemSchema = z
   .object({
     productId: z.number(),
-    cansimId: z.string().optional(),
-    cubeTitleEn: z.string().optional(),
-    cubeTitleFr: z.string().optional(),
-    cubeStartDate: z.string().optional(),
-    cubeEndDate: z.string().optional(),
-    releaseTime: z.string().optional(),
-    archived: z.union([z.string(), z.number()]).optional(),
-    subjectCode: z.array(z.union([z.string(), z.number()])).optional(),
-    surveyCode: z.array(z.union([z.string(), z.number()])).optional(),
-    frequencyCode: z.number().optional(),
-    corrections: z.array(z.unknown()).optional(),
-    issueDate: z.string().optional(),
-    dimensions: z.array(z.unknown()).optional(),
+    cansimId: z.string().nullish(),
+    cubeTitleEn: z.string().nullish(),
+    cubeTitleFr: z.string().nullish(),
+    cubeStartDate: z.string().nullish(),
+    cubeEndDate: z.string().nullish(),
+    releaseTime: z.string().nullish(),
+    archived: z.union([z.string(), z.number()]).nullish(),
+    subjectCode: z.array(z.union([z.string(), z.number()])).nullish(),
+    surveyCode: z.array(z.union([z.string(), z.number()])).nullish(),
+    frequencyCode: z.number().nullish(),
+    corrections: z.array(z.unknown()).nullish(),
+    issueDate: z.string().nullish(),
+    dimensions: z.array(z.unknown()).nullish(),
   })
   .passthrough();
 

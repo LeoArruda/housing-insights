@@ -20,7 +20,14 @@ const envSchema = z.object({
     ),
 
   STATCAN_CATALOG_PATH: z.string().optional(),
-  STATCAN_CATALOG_FROM_API: z.coerce.boolean().default(false),
+  /** String env values: only `true`/`1`/`yes` enable API mode; `false` and unset are off (avoid `z.coerce.boolean()`, which treats string `"false"` as truthy). */
+  STATCAN_CATALOG_FROM_API: z.preprocess((val: unknown) => {
+    if (val === undefined || val === null || val === "") return false;
+    if (typeof val === "boolean") return val;
+    const s = String(val).trim().toLowerCase();
+    if (s === "true" || s === "1" || s === "yes") return true;
+    return false;
+  }, z.boolean()),
   STATCAN_KEYWORDS_PATH: z.string().optional(),
   STATCAN_INGEST_MODE: z
     .enum(["explicit", "keyword", "hybrid"])

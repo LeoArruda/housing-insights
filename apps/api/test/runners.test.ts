@@ -91,6 +91,7 @@ describe("job runners (fixture fetch)", () => {
     const env = loadEnv({
       DATABASE_PATH: path,
       STATCAN_CATALOG_PATH: join(fixtureDir, "catalog-small.json"),
+      STATCAN_CATALOG_FROM_API: "false",
       STATCAN_KEYWORDS_PATH: keywordsPath,
       STATCAN_MIN_KEYWORD_SCORE: "1",
     });
