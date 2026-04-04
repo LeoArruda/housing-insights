@@ -69,3 +69,12 @@ export function countCatalogRows(db: Database): number {
     .get() as { c: number };
   return row.c;
 }
+
+export function catalogHasProduct(db: Database, productId: number): boolean {
+  const row = db
+    .query(
+      `SELECT 1 AS ok FROM statcan_cube_catalog WHERE product_id = ? LIMIT 1`,
+    )
+    .get(productId) as { ok: number } | undefined;
+  return row != null;
+}

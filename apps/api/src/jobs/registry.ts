@@ -7,6 +7,7 @@ import {
   jobStatcanWdsData,
   jobStatcanWdsMetadata,
 } from "./runners.ts";
+import { jobStatcanScheduledIngest } from "./statcan-scheduled.ts";
 
 export const JOB_NAMES = [
   "statcan-rss",
@@ -14,6 +15,7 @@ export const JOB_NAMES = [
   "statcan-catalog-index",
   "statcan-wds-metadata",
   "statcan-wds-data",
+  "statcan-scheduled-ingest",
   "boc-valet",
 ] as const;
 
@@ -28,6 +30,7 @@ export const jobRegistry: Record<
   "statcan-catalog-index": jobStatcanCatalogIndex,
   "statcan-wds-metadata": jobStatcanWdsMetadata,
   "statcan-wds-data": jobStatcanWdsData,
+  "statcan-scheduled-ingest": jobStatcanScheduledIngest,
   "boc-valet": jobBocValet,
 };
 

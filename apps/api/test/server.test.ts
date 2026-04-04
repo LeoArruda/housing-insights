@@ -44,6 +44,11 @@ describe("read API", () => {
     const body = (await jr.json()) as { data: unknown[] };
     expect(body.data.length).toBeGreaterThanOrEqual(1);
 
+    const sched = await app.request("/statcan/schedules");
+    expect(sched.status).toBe(200);
+    const schedBody = (await sched.json()) as { data: unknown[] };
+    expect(Array.isArray(schedBody.data)).toBe(true);
+
     db.close();
   });
 });

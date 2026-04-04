@@ -39,6 +39,11 @@ schedule(env.DAEMON_STATCAN_WDS_METADATA_CRON, "statcan-wds-metadata", () =>
 schedule(env.DAEMON_STATCAN_WDS_DATA_CRON, "statcan-wds-data", () =>
   runJobByName(ctx, "statcan-wds-data"),
 );
+schedule(
+  env.DAEMON_STATCAN_SCHEDULE_TICK_CRON,
+  "statcan-scheduled-ingest",
+  () => runJobByName(ctx, "statcan-scheduled-ingest"),
+);
 schedule(env.DAEMON_BOC_VALET_CRON, "boc-valet", () =>
   runJobByName(ctx, "boc-valet"),
 );

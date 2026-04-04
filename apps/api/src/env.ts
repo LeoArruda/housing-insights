@@ -38,6 +38,8 @@ const envSchema = z.object({
   DAEMON_STATCAN_CATALOG_CRON: z.string().default("0 2 * * 0"),
   DAEMON_STATCAN_WDS_METADATA_CRON: z.string().default("0 6 * * *"),
   DAEMON_STATCAN_WDS_DATA_CRON: z.string().default("30 6 * * *"),
+  /** Tick for per-product StatCan schedules (`statcan-scheduled-ingest` job). */
+  DAEMON_STATCAN_SCHEDULE_TICK_CRON: z.string().default("*/5 * * * *"),
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),
 });
 

@@ -16,6 +16,11 @@ describe("runMigrations", () => {
   });
 
   it("applies initial migration idempotently", () => {
+    try {
+      unlinkSync(tmpDb);
+    } catch {
+      /* ignore */
+    }
     const db = openDatabase(tmpDb);
     runMigrations(db, migrationsDirectory());
     const tables = db
@@ -29,6 +34,7 @@ describe("runMigrations", () => {
     expect(names).toContain("schema_migrations");
     expect(names).toContain("statcan_cube_catalog");
     expect(names).toContain("statcan_ingest_cursor");
+    expect(names).toContain("statcan_product_schedules");
 
     runMigrations(db, migrationsDirectory());
     const versions = db
@@ -38,6 +44,20 @@ describe("runMigrations", () => {
     expect(versions.filter((v) => v.version === "002_statcan_catalog").length).toBe(
       1,
     );
+    expect(versions.filter((v) => v.version === "003_statcan_product_schedules").length).toBe(
+      1,
+    );
+    expect(versions.filter((v) => v.version === "004_statcan_pilot_schedules_weekly").length).toBe(
+      1,
+    );
+
+    const pilot = db
+      .query(
+        `SELECT frequency FROM statcan_product_schedules WHERE product_id = ?`,
+      )
+      .get(34100096) as { frequency: string };
+    expect(pilot.frequency).toBe("weekly");
+
     db.close();
   });
 });
