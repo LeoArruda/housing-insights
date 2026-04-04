@@ -1,11 +1,27 @@
 import { authHeaders } from "../auth/state.ts";
 
+/** Empty string in Vite dev = same-origin `/api` (see vite proxy). Otherwise full base URL, no trailing slash. */
 export function apiBase(): string {
   const v = import.meta.env.VITE_API_BASE_URL;
-  if (v == null || String(v).trim() === "") {
-    return "http://127.0.0.1:3000";
+  if (v != null && String(v).trim() !== "") {
+    return String(v).replace(/\/$/, "");
   }
-  return String(v).replace(/\/$/, "");
+  if (import.meta.env.DEV) {
+    return "";
+  }
+  return "http://127.0.0.1:3000";
+}
+
+/** Human-readable API target for login hint. */
+export function apiBaseDisplay(): string {
+  const b = apiBase();
+  if (b === "" && typeof window !== "undefined") {
+    return `${window.location.origin}/api`;
+  }
+  if (b === "") {
+    return "/api (Vite dev proxy)";
+  }
+  return b;
 }
 
 export class ApiHttpError extends Error {
@@ -23,6 +39,9 @@ export class ApiHttpError extends Error {
 function joinUrl(path: string): string {
   const base = apiBase();
   const p = path.startsWith("/") ? path : `/${path}`;
+  if (base === "") {
+    return `/api${p}`;
+  }
   return `${base}${p}`;
 }
 

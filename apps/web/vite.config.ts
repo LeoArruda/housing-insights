@@ -9,4 +9,28 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:3000",
+        changeOrigin: true,
+        rewrite: (p) => {
+          const stripped = p.replace(/^\/api/, "");
+          return stripped === "" ? "/" : stripped;
+        },
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:3000",
+        changeOrigin: true,
+        rewrite: (p) => {
+          const stripped = p.replace(/^\/api/, "");
+          return stripped === "" ? "/" : stripped;
+        },
+      },
+    },
+  },
 });

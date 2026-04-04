@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { apiBase, ApiHttpError } from "../api/client.ts";
+import { apiBaseDisplay, ApiHttpError } from "../api/client.ts";
 import { useAuth } from "../composables/useAuth.ts";
 
 const tokenInput = ref("");
@@ -40,7 +40,7 @@ async function onSubmit() {
       <h1>Operations console</h1>
       <p class="hint">
         API:
-        <code>{{ apiBase() }}</code>
+        <code>{{ apiBaseDisplay() }}</code>
         · Paste the same Bearer secret configured as
         <code>DASHBOARD_OPERATOR_KEY</code> or
         <code>DASHBOARD_VIEWER_KEY</code>. Leave empty if the API runs without
