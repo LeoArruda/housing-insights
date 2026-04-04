@@ -75,3 +75,64 @@ export function getJobRunById(db: Database, id: number) {
       }
     | undefined;
 }
+
+export type JobRunSummary24h = {
+  success: number;
+  failed: number;
+  running_unfinished: number;
+};
+
+/** Counts finished runs in [sinceIso, ∞) by status; plus currently running (unfinished). */
+export function getJobRunCountsForDashboard(
+  db: Database,
+  sinceIso: string,
+): JobRunSummary24h {
+  const successRow = db
+    .query(
+      `SELECT COUNT(*) AS c FROM job_runs
+       WHERE status = 'success' AND finished_at IS NOT NULL AND finished_at >= ?`,
+    )
+    .get(sinceIso) as { c: number };
+  const failedRow = db
+    .query(
+      `SELECT COUNT(*) AS c FROM job_runs
+       WHERE status = 'failed' AND finished_at IS NOT NULL AND finished_at >= ?`,
+    )
+    .get(sinceIso) as { c: number };
+  const runningRow = db
+    .query(
+      `SELECT COUNT(*) AS c FROM job_runs
+       WHERE finished_at IS NULL AND status = 'running'`,
+    )
+    .get() as { c: number };
+  return {
+    success: successRow.c,
+    failed: failedRow.c,
+    running_unfinished: runningRow.c,
+  };
+}
+
+export type RecentFailedJobRunRow = {
+  id: number;
+  job_name: string;
+  started_at: string;
+  finished_at: string | null;
+  status: string;
+  error_message: string | null;
+};
+
+export function listRecentFailedJobRuns(
+  db: Database,
+  limit: number,
+): RecentFailedJobRunRow[] {
+  const lim = Math.min(Math.max(limit, 1), 50);
+  return db
+    .query(
+      `SELECT id, job_name, started_at, finished_at, status, error_message
+       FROM job_runs
+       WHERE status = 'failed' AND finished_at IS NOT NULL
+       ORDER BY finished_at DESC
+       LIMIT ?`,
+    )
+    .all(lim) as RecentFailedJobRunRow[];
+}

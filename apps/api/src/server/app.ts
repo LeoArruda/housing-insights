@@ -8,6 +8,8 @@ import * as statcanSchedulesRepo from "../db/repositories/statcan-product-schedu
 import type { Env } from "../env.ts";
 import { computeNextRunAfter } from "../services/statcan-next-run.ts";
 import { jobStatusSchema } from "@housing-insights/types";
+import { corsAllowOriginMiddleware } from "./cors.ts";
+import { dashboardAuthMiddleware, requireOperator } from "./dashboard-auth.ts";
 
 const scheduleFrequencySchema = z.enum(["daily", "weekly", "monthly"]);
 
@@ -73,7 +75,7 @@ function scheduleRowToJson(row: statcanSchedulesRepo.StatcanProductScheduleRow) 
   };
 }
 
-export function createApp(db: Database, _env: Env) {
+export function createApp(db: Database, env: Env) {
   const app = new Hono();
 
   app.get("/health", (c) => c.json({ status: "ok" }));
@@ -86,6 +88,13 @@ export function createApp(db: Database, _env: Env) {
       return c.json({ status: "not_ready", database: false }, 503);
     }
   });
+
+  const corsOrigin = env.CORS_ALLOW_ORIGIN?.trim();
+  if (corsOrigin) {
+    app.use("*", corsAllowOriginMiddleware(corsOrigin));
+  }
+
+  app.use("*", dashboardAuthMiddleware(env));
 
   app.get("/job-runs", (c) => {
     const q = c.req.query();
@@ -130,12 +139,57 @@ export function createApp(db: Database, _env: Env) {
     return c.json({ data: rows });
   });
 
-  app.get("/statcan/schedules", (c) => {
+  app.get("/stats/summary", (c) => {
+    const window = c.req.query("window") ?? "24h";
+    if (window !== "24h") {
+      return c.json({ error: "Unsupported window" }, 400);
+    }
+    const sinceIso = new Date(
+      Date.now() - 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const jobCounts = jobRunsRepo.getJobRunCountsForDashboard(db, sinceIso);
+    const recentFailed = jobRunsRepo.listRecentFailedJobRuns(db, 15);
+    const schedules = statcanSchedulesRepo.getScheduleDashboardStats(db);
+    return c.json({
+      window_utc_hours: 24,
+      job_runs_finished_last_window: {
+        success: jobCounts.success,
+        failed: jobCounts.failed,
+      },
+      job_runs_running_unfinished: jobCounts.running_unfinished,
+      recent_failed_runs: recentFailed,
+      schedules,
+    });
+  });
+
+  const statcanCatalog = new Hono();
+  statcanCatalog.use(requireOperator());
+  statcanCatalog.get("/", (c) => {
+    const q = c.req.query("q");
+    const limitParse = z.coerce
+      .number()
+      .min(1)
+      .max(100)
+      .safeParse(c.req.query("limit"));
+    const offsetParse = z.coerce
+      .number()
+      .min(0)
+      .safeParse(c.req.query("offset"));
+    const limit = limitParse.success ? limitParse.data : 25;
+    const offset = offsetParse.success ? offsetParse.data : 0;
+    const rows = statcanCatalogRepo.searchCatalog(db, q, limit, offset);
+    return c.json({ data: rows, limit, offset });
+  });
+  app.route("/statcan/catalog", statcanCatalog);
+
+  const statcanSchedules = new Hono();
+  statcanSchedules.use(requireOperator());
+  statcanSchedules.get("/", (c) => {
     const rows = statcanSchedulesRepo.listAllSchedules(db);
     return c.json({ data: rows.map(scheduleRowToJson) });
   });
 
-  app.post("/statcan/schedules", async (c) => {
+  statcanSchedules.post("/", async (c) => {
     let bodyJson: unknown;
     try {
       bodyJson = await c.req.json();
@@ -190,7 +244,7 @@ export function createApp(db: Database, _env: Env) {
     return c.json(scheduleRowToJson(row!), 201);
   });
 
-  app.patch("/statcan/schedules/:id", async (c) => {
+  statcanSchedules.patch("/:id", async (c) => {
     const id = Number(c.req.param("id"));
     if (!Number.isFinite(id)) {
       return c.json({ error: "Invalid id" }, 400);
@@ -232,7 +286,7 @@ export function createApp(db: Database, _env: Env) {
     return c.json(scheduleRowToJson(row!));
   });
 
-  app.delete("/statcan/schedules/:id", (c) => {
+  statcanSchedules.delete("/:id", (c) => {
     const id = Number(c.req.param("id"));
     if (!Number.isFinite(id)) {
       return c.json({ error: "Invalid id" }, 400);
@@ -242,6 +296,20 @@ export function createApp(db: Database, _env: Env) {
       return c.json({ error: "Not found" }, 404);
     }
     return c.body(null, 204);
+  });
+
+  app.route("/statcan/schedules", statcanSchedules);
+
+  app.get("/raw-payloads/:id", (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+    const row = rawPayloadsRepo.getRawPayloadById(db, id);
+    if (!row) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    return c.json(row);
   });
 
   return app;

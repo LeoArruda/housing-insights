@@ -63,3 +63,26 @@ export function listRawPayloads(db: Database, filter: RawPayloadListFilter = {})
     job_run_id: number | null;
   }[];
 }
+
+export type RawPayloadRow = {
+  id: number;
+  source: string;
+  source_key: string | null;
+  fetched_at: string;
+  content_type: string;
+  body: string;
+  sha256: string;
+  job_run_id: number | null;
+};
+
+export function getRawPayloadById(
+  db: Database,
+  id: number,
+): RawPayloadRow | undefined {
+  return db
+    .query(
+      `SELECT id, source, source_key, fetched_at, content_type, body, sha256, job_run_id
+       FROM raw_payloads WHERE id = ?`,
+    )
+    .get(id) as RawPayloadRow | undefined;
+}

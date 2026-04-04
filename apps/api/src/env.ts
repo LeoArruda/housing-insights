@@ -48,6 +48,12 @@ const envSchema = z.object({
   /** Tick for per-product StatCan schedules (`statcan-scheduled-ingest` job). */
   DAEMON_STATCAN_SCHEDULE_TICK_CRON: z.string().default("*/5 * * * *"),
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),
+
+  /** If set, `Authorization: Bearer <token>` required on API routes except `/health` and `/health/ready`. Viewer cannot access `/statcan/schedules` or `/statcan/catalog`. */
+  DASHBOARD_OPERATOR_KEY: z.string().optional(),
+  DASHBOARD_VIEWER_KEY: z.string().optional(),
+  /** Dev: e.g. `http://localhost:5173` — sets CORS headers on API responses. */
+  CORS_ALLOW_ORIGIN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

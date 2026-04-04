@@ -203,3 +203,30 @@ export function deleteSchedule(db: Database, id: number): boolean {
   const r = db.run(`DELETE FROM statcan_product_schedules WHERE id = ?`, [id]);
   return r.changes > 0;
 }
+
+export type ScheduleDashboardStats = {
+  total: number;
+  enabled: number;
+  with_last_error: number;
+};
+
+export function getScheduleDashboardStats(db: Database): ScheduleDashboardStats {
+  const row = db
+    .query(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled,
+         SUM(CASE WHEN last_error IS NOT NULL AND TRIM(last_error) != '' THEN 1 ELSE 0 END) AS with_last_error
+       FROM statcan_product_schedules`,
+    )
+    .get() as {
+    total: number;
+    enabled: number | null;
+    with_last_error: number | null;
+  };
+  return {
+    total: row.total,
+    enabled: row.enabled ?? 0,
+    with_last_error: row.with_last_error ?? 0,
+  };
+}
