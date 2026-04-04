@@ -136,6 +136,7 @@ The current working assumptions are:
 - the application will be built as a modern web app
 - the frontend will use Vue 3
 - the backend will use Bun with TypeScript
+- the first iteration uses **SQLite** for persistence (e.g. `bun:sqlite`); a move to PostgreSQL or another store is a later decision if requirements demand it
 - the project will be modular, but not over-engineered
 - the product will be developed iteratively through small vertical slices
 - the agentic workflow is part of the project objective, not just the implementation method
@@ -146,7 +147,7 @@ The following still need to be clarified later through product-specific specs:
 
 - exact business domain and first feature set
 - authentication requirements
-- data persistence strategy and database choice
+- long-term production database strategy (first iteration: SQLite)
 - deployment targets
 - observability requirements
 - external integrations, if any

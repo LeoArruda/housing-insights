@@ -34,7 +34,7 @@ The objective is to create a **reliable, extensible data platform** that enables
 
 This project is built using:
 - **Bun + TypeScript**
-- **PostgreSQL**
+- **SQLite** for the first iteration (e.g. `bun:sqlite`); **PostgreSQL** remains an option when scale, deployment, or concurrency needs justify it
 - **API-first ingestion architecture**
 - **multi-agent collaboration using Cursor**
 
@@ -444,7 +444,7 @@ First Milestone
 
 Deliver:
 	•	project scaffold (Bun + TS)
-	•	DB connection + migrations
+	•	SQLite connection + migrations (first iteration)
 	•	raw_payloads + job_runs tables
 	•	StatCan RSS connector
 	•	BoC RSS connector
