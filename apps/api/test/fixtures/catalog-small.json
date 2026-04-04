@@ -1,0 +1,34 @@
+[
+  {
+    "productId": 34100135,
+    "cansimId": "027-0008",
+    "cubeTitleEn": "Canada Mortgage and Housing Corporation, housing starts",
+    "cubeTitleFr": "SCHL, logements",
+    "cubeStartDate": "1948-01-01T05:00:00Z",
+    "cubeEndDate": "2025-10-01T05:00:00Z",
+    "releaseTime": "2026-01-21T08:30:00Z",
+    "archived": "0",
+    "subjectCode": ["3408"],
+    "surveyCode": ["7505"],
+    "frequencyCode": 9,
+    "corrections": [],
+    "issueDate": "2026-01-21T04:00:00Z",
+    "dimensions": []
+  },
+  {
+    "productId": 18100005,
+    "cansimId": "326-0021",
+    "cubeTitleEn": "Consumer Price Index, all-items",
+    "cubeTitleFr": "Indice des prix",
+    "archived": "0",
+    "subjectCode": ["18"],
+    "frequencyCode": 12
+  },
+  {
+    "productId": 99999999,
+    "cubeTitleEn": "Unrelated economic table",
+    "cubeTitleFr": "Table sans mots-clefs",
+    "archived": "1",
+    "frequencyCode": 12
+  }
+]

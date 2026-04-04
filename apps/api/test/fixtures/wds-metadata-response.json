@@ -1,0 +1,11 @@
+[
+  {
+    "status": "SUCCESS",
+    "object": {
+      "responseStatusCode": 0,
+      "productId": "34100135",
+      "cansimId": "027-0008",
+      "cubeTitleEn": "Test cube"
+    }
+  }
+]

@@ -15,7 +15,7 @@ See also [docs/specs/platform-foundation/spec.md](specs/platform-foundation/spec
 
 Source lives under `apps/api/src/`:
 
-- `connectors/` — fetch + parse external sources (RSS, StatCan WDS exemplar, BoC Valet exemplar)
+- `connectors/` — fetch + parse external sources (RSS, BoC Valet); `connectors/statcan/` — WDS REST client, catalog scoring, targeting
 - `db/` — SQLite open helper, SQL migrations, repositories
 - `jobs/` — job registry and runners (shared by CLI and daemon)
 - `server/` — Hono read API (health, job runs, raw payloads)
@@ -38,6 +38,15 @@ External feeds / APIs
 ```
 
 **Normalization and curated tables** are planned; this slice stores **raw** bodies only, with checksum-based deduplication per source.
+
+### StatCan WDS
+
+- **Catalog**: optional JSON snapshot (e.g. repo-root `allstatscan.json`) or live `getAllCubesListLite`; rows matching Housing/Macro keywords in [statcan-keywords.json](../apps/api/config/statcan-keywords.json) are stored in `statcan_cube_catalog`.
+- **Targeting**: `STATCAN_INGEST_MODE` selects explicit product ID lists and/or scored catalog rows (`keyword` / `hybrid`).
+- **Metadata**: POST `getCubeMetadata` per target PID; raw responses stored with source `statcan-wds-metadata`.
+- **Data**: POST `getDataFromVectorsAndLatestNPeriods` when `STATCAN_DATA_VECTOR_IDS` is set, or `getDataFromCubePidCoordAndLatestNPeriods` when `STATCAN_DEFAULT_DATA_COORDINATE` is set; raw responses use source `statcan-wds-data`.
+
+See [docs/specs/statcan-wds-automation/spec.md](specs/statcan-wds-automation/spec.md).
 
 ## Persistence
 

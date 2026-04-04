@@ -151,6 +151,10 @@ bun run migrate             # apply SQLite migrations (creates ./data/platform.s
 bun run dev                 # read API (default http://127.0.0.1:3000)
 bun run cli -- job list
 bun run cli -- job run statcan-rss   # hits real URLs unless you change code; requires network
+# StatCan WDS (see apps/api/.env.example): catalog path or STATCAN_CATALOG_FROM_API, then metadata/data jobs
+bun run cli -- job run statcan-catalog-index
+bun run cli -- job run statcan-wds-metadata
+bun run cli -- job run statcan-wds-data
 bun run daemon              # long-lived scheduler (cron from env; see apps/api/.env.example)
 bun test                    # runs apps/api tests (fixtures only)
 ```

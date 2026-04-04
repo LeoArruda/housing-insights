@@ -27,12 +27,17 @@ describe("runMigrations", () => {
     expect(names).toContain("job_runs");
     expect(names).toContain("raw_payloads");
     expect(names).toContain("schema_migrations");
+    expect(names).toContain("statcan_cube_catalog");
+    expect(names).toContain("statcan_ingest_cursor");
 
     runMigrations(db, migrationsDirectory());
     const versions = db
       .query("SELECT version FROM schema_migrations")
       .all() as { version: string }[];
     expect(versions.filter((v) => v.version === "001_initial").length).toBe(1);
+    expect(versions.filter((v) => v.version === "002_statcan_catalog").length).toBe(
+      1,
+    );
     db.close();
   });
 });

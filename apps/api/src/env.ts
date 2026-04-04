@@ -12,19 +12,32 @@ const envSchema = z.object({
     .url()
     .default("https://www.statcan.gc.ca/eng/rss/sc-Bull"),
   BOC_RSS_URL: z.string().url().default("https://www.bankofcanada.ca/feed/"),
-  STATCAN_WDS_URL: z
-    .string()
-    .url()
-    .default("https://api.statcan.gc.ca/cubes/v1/cube?page=1&limit=1"),
   BOC_VALET_URL: z
     .string()
     .url()
     .default(
       "https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?recent=1",
     ),
+
+  STATCAN_CATALOG_PATH: z.string().optional(),
+  STATCAN_CATALOG_FROM_API: z.coerce.boolean().default(false),
+  STATCAN_KEYWORDS_PATH: z.string().optional(),
+  STATCAN_INGEST_MODE: z
+    .enum(["explicit", "keyword", "hybrid"])
+    .default("explicit"),
+  STATCAN_PRODUCT_IDS: z.string().default(""),
+  STATCAN_MAX_CUBES_PER_JOB: z.coerce.number().min(1).max(50_000).default(50),
+  STATCAN_MIN_KEYWORD_SCORE: z.coerce.number().min(0).default(1),
+  STATCAN_LATEST_N: z.coerce.number().min(1).max(200).default(3),
+  STATCAN_DEFAULT_DATA_COORDINATE: z.string().optional(),
+  STATCAN_DATA_VECTOR_IDS: z.string().default(""),
+  STATCAN_REQUEST_DELAY_MS: z.coerce.number().min(0).default(200),
+
   DAEMON_STATCAN_RSS_CRON: z.string().default("0 * * * *"),
   DAEMON_BOC_RSS_CRON: z.string().default("15 * * * *"),
-  DAEMON_STATCAN_WDS_CRON: z.string().default("0 6 * * *"),
+  DAEMON_STATCAN_CATALOG_CRON: z.string().default("0 2 * * 0"),
+  DAEMON_STATCAN_WDS_METADATA_CRON: z.string().default("0 6 * * *"),
+  DAEMON_STATCAN_WDS_DATA_CRON: z.string().default("30 6 * * *"),
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),
 });
 

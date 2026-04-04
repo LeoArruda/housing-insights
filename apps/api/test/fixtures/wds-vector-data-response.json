@@ -1,0 +1,18 @@
+[
+  {
+    "status": "SUCCESS",
+    "object": {
+      "responseStatusCode": 0,
+      "productId": 35100003,
+      "coordinate": "1.12.0.0.0.0.0.0.0.0",
+      "vectorId": 32164132,
+      "vectorDataPoint": [
+        {
+          "refPer": "2022-01-01",
+          "value": 19.43,
+          "decimals": 2
+        }
+      ]
+    }
+  }
+]

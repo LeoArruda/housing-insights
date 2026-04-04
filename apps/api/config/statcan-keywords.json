@@ -1,0 +1,30 @@
+{
+  "housing": [
+    "housing",
+    "dwelling",
+    "building permits",
+    "construction",
+    "starts",
+    "completions",
+    "real estate",
+    "logement",
+    "chantier",
+    "permis de construire"
+  ],
+  "macro": [
+    "cpi",
+    "consumer price index",
+    "gdp",
+    "labour",
+    "labor",
+    "employment",
+    "population",
+    "income",
+    "ipc",
+    "indice des prix",
+    "pib",
+    "emploi",
+    "population",
+    "revenu"
+  ]
+}

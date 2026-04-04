@@ -30,8 +30,14 @@ schedule(env.DAEMON_STATCAN_RSS_CRON, "statcan-rss", () =>
 schedule(env.DAEMON_BOC_RSS_CRON, "boc-rss", () =>
   runJobByName(ctx, "boc-rss"),
 );
-schedule(env.DAEMON_STATCAN_WDS_CRON, "statcan-wds", () =>
-  runJobByName(ctx, "statcan-wds"),
+schedule(env.DAEMON_STATCAN_CATALOG_CRON, "statcan-catalog-index", () =>
+  runJobByName(ctx, "statcan-catalog-index"),
+);
+schedule(env.DAEMON_STATCAN_WDS_METADATA_CRON, "statcan-wds-metadata", () =>
+  runJobByName(ctx, "statcan-wds-metadata"),
+);
+schedule(env.DAEMON_STATCAN_WDS_DATA_CRON, "statcan-wds-data", () =>
+  runJobByName(ctx, "statcan-wds-data"),
 );
 schedule(env.DAEMON_BOC_VALET_CRON, "boc-valet", () =>
   runJobByName(ctx, "boc-valet"),

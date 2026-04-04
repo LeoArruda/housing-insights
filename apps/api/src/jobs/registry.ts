@@ -2,14 +2,18 @@ import type { JobContext } from "./runners.ts";
 import {
   jobBocRss,
   jobBocValet,
+  jobStatcanCatalogIndex,
   jobStatcanRss,
-  jobStatcanWds,
+  jobStatcanWdsData,
+  jobStatcanWdsMetadata,
 } from "./runners.ts";
 
 export const JOB_NAMES = [
   "statcan-rss",
   "boc-rss",
-  "statcan-wds",
+  "statcan-catalog-index",
+  "statcan-wds-metadata",
+  "statcan-wds-data",
   "boc-valet",
 ] as const;
 
@@ -21,7 +25,9 @@ export const jobRegistry: Record<
 > = {
   "statcan-rss": jobStatcanRss,
   "boc-rss": jobBocRss,
-  "statcan-wds": jobStatcanWds,
+  "statcan-catalog-index": jobStatcanCatalogIndex,
+  "statcan-wds-metadata": jobStatcanWdsMetadata,
+  "statcan-wds-data": jobStatcanWdsData,
   "boc-valet": jobBocValet,
 };
 
