@@ -1,8 +1,3 @@
-Here’s a clean, professional README.md aligned with your project, your AGENTS.md, and your overall direction (signals platform + multi-agent dev).
-
-⸻
-
-
 # 🇨🇦 Canadian Economy & Housing Signals Platform
 
 A modular, API-first data platform designed to collect, process, and analyze signals from the Canadian economy and housing market.
@@ -134,20 +129,35 @@ The system follows a layered ingestion model:
 ## 📁 Project Structure
 
 ```text
-.cursor/         # Cursor agents, rules, and skills
-docs/            # architecture, specs, decisions
-apps/            # application entry points (api, web)
-packages/        # shared types, utils, config
-src/
-  connectors/    # external data integrations
-  ingestion/     # raw → normalized → curated pipelines
-  jobs/          # scheduled jobs
-  domain/        # core business models
-  services/      # orchestration, signals, summaries
-  db/            # schema, migrations, repositories
-tests/           # unit and integration tests
-scripts/         # operational scripts
+.cursor/              # Cursor agents, rules, and skills
+docs/                 # architecture, specs, decisions
+docs/specs/           # feature specs (spec.md, plan.md, tasks.md)
+apps/api/             # Bun API: HTTP read API, CLI, daemon scheduler
+  src/                # connectors, db, jobs, server, entries
+  test/               # tests and fixtures (no live network in CI)
+packages/types/       # shared Zod schemas and types
+```
 
+⸻
+
+## 💻 Local development
+
+**Requirements:** [Bun](https://bun.sh) 1.x.
+
+```bash
+bun install                 # from repository root
+cp apps/api/.env.example apps/api/.env   # optional; defaults work for local SQLite path
+bun run migrate             # apply SQLite migrations (creates ./data/platform.sqlite by default)
+bun run dev                 # read API (default http://127.0.0.1:3000)
+bun run cli -- job list
+bun run cli -- job run statcan-rss   # hits real URLs unless you change code; requires network
+bun run daemon              # long-lived scheduler (cron from env; see apps/api/.env.example)
+bun test                    # runs apps/api tests (fixtures only)
+```
+
+Useful HTTP endpoints: `GET /health`, `GET /health/ready`, `GET /job-runs`, `GET /raw-payloads`.
+
+**Note:** Run the API and the daemon as **separate processes** only if you use two different database files, or coordinate writes—SQLite is a single-writer store in this iteration.
 
 ⸻
 

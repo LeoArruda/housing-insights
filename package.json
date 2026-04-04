@@ -1,0 +1,13 @@
+{
+  "name": "housing-insights",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run --cwd apps/api dev",
+    "start": "bun run --cwd apps/api start",
+    "cli": "bun run --cwd apps/api cli",
+    "daemon": "bun run --cwd apps/api daemon",
+    "migrate": "bun run --cwd apps/api migrate",
+    "test": "bun run --cwd apps/api test"
+  }
+}

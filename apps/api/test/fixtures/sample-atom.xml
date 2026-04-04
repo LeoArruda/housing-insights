@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom Test</title>
+  <entry><id>1</id><title>E1</title></entry>
+  <entry><id>2</id><title>E2</title></entry>
+</feed>
