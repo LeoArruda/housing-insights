@@ -12,6 +12,14 @@ const scheduleActive = computed(() => {
     n === "schedules" || n === "schedules-new" || n === "schedules-detail"
   );
 });
+
+const jobsActive = computed(
+  () => route.name === "jobs" || route.name === "jobs-detail",
+);
+
+const dataActive = computed(
+  () => route.name === "data" || route.name === "data-detail",
+);
 </script>
 
 <template>
@@ -38,14 +46,14 @@ const scheduleActive = computed(() => {
         <RouterLink
           to="/jobs"
           class="nav-link"
-          active-class="nav-link-active"
+          :class="{ 'nav-link-active': jobsActive }"
         >
           Job runs
         </RouterLink>
         <RouterLink
           to="/data"
           class="nav-link"
-          active-class="nav-link-active"
+          :class="{ 'nav-link-active': dataActive }"
         >
           Raw data
         </RouterLink>

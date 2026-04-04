@@ -20,14 +20,14 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 
 ## Features
 
-- [ ] US-Dashboard: KPI cards + recent failures + schedule health
-- [ ] US-Schedules: list + detail
-- [ ] US-Schedules: guided create wizard (catalog → cadence → advanced → review)
-- [ ] US-Schedules: PATCH (edit/disable) + DELETE with confirm
-- [ ] US-Jobs: list with filters + detail
-- [ ] US-Data: list with source filter + pagination + detail JSON viewer
-- [ ] US-RBAC: viewer vs operator route guards
-- [ ] US-Auth: minimal gate (per PRD Open Questions)
+- [x] US-Dashboard: KPI cards + recent failures + schedule health
+- [x] US-Schedules: list + detail
+- [x] US-Schedules: guided create wizard (catalog → cadence → advanced → review)
+- [x] US-Schedules: PATCH (edit/disable) + DELETE with confirm
+- [x] US-Jobs: list with filters + detail
+- [x] US-Data: list with source filter + pagination + detail JSON viewer
+- [x] US-RBAC: viewer vs operator route guards
+- [x] US-Auth: minimal gate (per PRD Open Questions)
 
 ## Quality
 
