@@ -31,6 +31,6 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 
 ## Quality
 
-- [ ] `bun test` (api) passes; add web unit tests where valuable (composables, formatters)
-- [ ] Browser verify Dashboard + one schedule flow (dev-browser skill)
-- [ ] Update [docs/architecture.md](../../architecture.md) with `apps/web` and console overview
+- [x] `bun test` (api) passes; add web unit tests where valuable (composables, formatters)
+- [x] Browser verify Dashboard + one schedule flow (dev-browser skill)
+- [x] Update [docs/architecture.md](../../architecture.md) with `apps/web` and console overview
