@@ -4,19 +4,19 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 
 ## Backend (apps/api)
 
-- [ ] Add optional Bearer auth middleware: env `DASHBOARD_OPERATOR_KEY`, `DASHBOARD_VIEWER_KEY`; protect routes per spec matrix; `GET /health` (and optionally `/health/ready`) stay public for probes
-- [ ] Add `GET /statcan/catalog` with search + pagination (repository query on `statcan_cube_catalog`)
-- [ ] Add `GET /raw-payloads/:id` (404 when missing)
-- [ ] Add optional `GET /stats/summary` for Dashboard aggregates (or document client-side aggregation limits)
-- [ ] Enable CORS for configured dev origin(s)
-- [ ] Unit/integration tests for new endpoints (fixtures, no live HTTP)
+- [x] Add optional Bearer auth middleware: env `DASHBOARD_OPERATOR_KEY`, `DASHBOARD_VIEWER_KEY`; protect routes per spec matrix; `GET /health` (and optionally `/health/ready`) stay public for probes
+- [x] Add `GET /statcan/catalog` with search + pagination (repository query on `statcan_cube_catalog`)
+- [x] Add `GET /raw-payloads/:id` (404 when missing)
+- [x] Add optional `GET /stats/summary` for Dashboard aggregates (or document client-side aggregation limits)
+- [x] Enable CORS for configured dev origin(s)
+- [x] Unit/integration tests for new endpoints (fixtures, no live HTTP)
 
 ## Frontend scaffold (apps/web)
 
-- [ ] Create `apps/web` with Vite + Vue 3 + TS + Vue Router
-- [ ] Env: `VITE_API_BASE_URL`; login stores Bearer token; document `DASHBOARD_*_KEY` in `apps/api/.env.example`
-- [ ] API client wrapper (fetch) with error shape handling
-- [ ] App shell: nav, layout, role-aware menu items
+- [x] Create `apps/web` with Vite + Vue 3 + TS + Vue Router
+- [x] Env: `VITE_API_BASE_URL`; login stores Bearer token; document `DASHBOARD_*_KEY` in `apps/api/.env.example`
+- [x] API client wrapper (fetch) with error shape handling
+- [x] App shell: nav, layout, role-aware menu items
 
 ## Features
 
