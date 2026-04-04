@@ -4,6 +4,7 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 
 ## Backend (apps/api)
 
+- [ ] Add optional Bearer auth middleware: env `DASHBOARD_OPERATOR_KEY`, `DASHBOARD_VIEWER_KEY`; protect routes per spec matrix; `GET /health` (and optionally `/health/ready`) stay public for probes
 - [ ] Add `GET /statcan/catalog` with search + pagination (repository query on `statcan_cube_catalog`)
 - [ ] Add `GET /raw-payloads/:id` (404 when missing)
 - [ ] Add optional `GET /stats/summary` for Dashboard aggregates (or document client-side aggregation limits)
@@ -13,7 +14,7 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 ## Frontend scaffold (apps/web)
 
 - [ ] Create `apps/web` with Vite + Vue 3 + TS + Vue Router
-- [ ] Env: `VITE_API_BASE_URL`; document in README and `.env.example`
+- [ ] Env: `VITE_API_BASE_URL`; login stores Bearer token; document `DASHBOARD_*_KEY` in `apps/api/.env.example`
 - [ ] API client wrapper (fetch) with error shape handling
 - [ ] App shell: nav, layout, role-aware menu items
 

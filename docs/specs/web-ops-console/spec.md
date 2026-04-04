@@ -7,7 +7,26 @@
 
 ## Summary
 
-Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard** (all roles), **StatCan schedule management** with **guided creation** (operators), **job run** inspection (operators), and **raw payload** list + JSON detail (operators). Aligns with backend tables `job_runs`, `raw_payloads`, `statcan_product_schedules`, and `statcan_cube_catalog`.
+Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard** (all roles), **StatCan schedule management** with **guided creation** (**operators only**), **job run** inspection (**operators + viewers**), and **raw payload** list + JSON detail (**operators + viewers**). Aligns with backend tables `job_runs`, `raw_payloads`, `statcan_product_schedules`, and `statcan_cube_catalog`.
+
+## Resolved decisions
+
+| Topic | Decision |
+|--------|-----------|
+| **Auth v1** | Optional env `DASHBOARD_OPERATOR_KEY` and `DASHBOARD_VIEWER_KEY`. If either is set, client sends `Authorization: Bearer <token>`. API maps token to role; **viewer** cannot call `/statcan/schedules` (403). If neither key is set, auth middleware **off** (local dev). **Future:** JWT/OIDC epic. |
+| **Viewer data access** | Viewers: Dashboard + `/jobs` + `/data` (read-only). No schedule routes. |
+| **Dashboard KPI window** | Counts: `finished_at` in **last 24h UTC**. Recent failures: **15** rows, `status=failed`, `finished_at DESC` (any age). |
+| **Catalog search** | `q` integer → `product_id` match; else case-insensitive `LIKE` on `cube_title_en` **or** `cube_title_fr`. `limit` default 25, max 100. |
+| **Hosting** | **Preferred:** one origin, proxy `/api` → Bun, `/` → static SPA. **Alt:** separate static host + CORS. **Dev:** CORS for Vite origin. |
+
+### Route × role matrix
+
+| Route | Viewer | Operator |
+|-------|--------|----------|
+| `/dashboard` | yes | yes |
+| `/schedules*` | no | yes |
+| `/jobs`, `/jobs/:id` | read-only | yes |
+| `/data`, `/data/:id` | read-only | yes |
 
 ## User scenarios and testing
 
@@ -47,7 +66,7 @@ Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard
 
 ### US-RBAC — Roles (P1)
 
-**Independent test:** Log in as viewer; hit `/schedules/new`; expect redirect or 403-style empty state.
+**Independent test:** Log in with **viewer** token; hit `/schedules/new` → blocked; hit `/jobs` → OK; `GET /statcan/schedules` via API → 403. **Operator** token → schedules OK.
 
 ## Functional requirements
 
@@ -56,7 +75,7 @@ Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard
 - **FR-3:** Guided schedule flow: catalog pick → cadence → optional advanced → create.
 - **FR-4:** Backend exposes **catalog search/list** endpoint if not present (see plan).
 - **FR-5:** Backend exposes **GET raw-payloads by id** if not present.
-- **FR-6:** Viewer cannot mutate schedules (UI + documented future API alignment).
+- **FR-6:** Viewer cannot read or mutate schedules (UI blocks routes; API returns **403** on `/statcan/schedules` when Bearer is viewer key).
 
 ## Non-goals
 
@@ -69,5 +88,5 @@ Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard
 
 ## Out of scope / future
 
-- API authentication hardening (tracked separately).
+- **SSO / enterprise IdP** (OIDC) — out of scope for v1; Bearer keys only.
 - BoC/RSS schedule UI when those models exist.

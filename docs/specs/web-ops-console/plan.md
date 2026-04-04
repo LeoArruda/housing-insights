@@ -17,13 +17,14 @@ flowchart LR
 
 - **SPA:** `apps/web` — Vite + Vue 3 + TypeScript; route-based layout; shared layout with nav by role.
 - **API:** Extend [`apps/api/src/server/app.ts`](../../../apps/api/src/server/app.ts) only where list/search/detail is missing (catalog, raw payload by id, optional stats).
-- **Auth v1:** Document deployment (VPN, reverse proxy) + minimal app gate; evolve to real API auth in a follow-up spec.
+- **Auth v1:** Optional `DASHBOARD_OPERATOR_KEY` / `DASHBOARD_VIEWER_KEY`; Hono middleware validates `Authorization: Bearer`; derives role; **off** when unset. SPA login → `sessionStorage`. **Follow-up:** JWT/OIDC.
+- **Hosting (prod):** Prefer **same-origin** reverse proxy: static SPA + `/api` → Bun. **Dev:** CORS for Vite port.
 
 ## Backend additions (minimal)
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /statcan/catalog` | Query params: `q`, `limit`, `offset` — search `statcan_cube_catalog` by `cube_title_en` / `cube_title_fr` / `product_id` |
+| `GET /statcan/catalog` | Query params: `q`, `limit`, `offset` — `q` integer → `product_id`; else `LIKE` on EN/FR titles (see spec Resolved decisions) |
 | `GET /raw-payloads/:id` | Single row for JSON viewer |
 | `GET /stats/summary` (optional) | Pre-computed job_run counts by status for window — avoids pulling 500 rows to client |
 
@@ -40,16 +41,16 @@ flowchart LR
 | `/schedules` | operator | Table |
 | `/schedules/new` | operator | Wizard |
 | `/schedules/:id` | operator | Detail + edit |
-| `/jobs` | operator | Filterable list |
-| `/jobs/:id` | operator | Detail |
-| `/data` | operator | Payload list |
-| `/data/:id` | operator | JSON viewer |
+| `/jobs` | all (read-only for viewer) | Filterable list |
+| `/jobs/:id` | all (read-only for viewer) | Detail |
+| `/data` | all (read-only for viewer) | Payload list |
+| `/data/:id` | all (read-only for viewer) | JSON viewer |
 
 **Packages:** Reuse `@housing-insights/types` where job status enums overlap.
 
 ## Phases
 
-1. **API gaps** — catalog list/search, raw payload by id, CORS; optional stats endpoint.
+1. **API gaps** — Bearer auth middleware (when keys set), catalog list/search, raw payload by id, CORS; optional stats endpoint.
 2. **Vue scaffold** — router, layout, API client, error toast pattern.
 3. **Dashboard** — wire to job_runs + schedules endpoints (or stats).
 4. **Schedules** — list/detail/PATCH/delete; then guided create wizard.
@@ -60,7 +61,7 @@ flowchart LR
 ## Risks
 
 - **Large JSON bodies** — browser memory; mitigate truncation/warning.
-- **Unauthenticated API** — deployment must restrict network access until auth ships.
+- **Keys unset in prod** — API stays open; deployment **must** use network controls or set keys.
 
 ## References
 
