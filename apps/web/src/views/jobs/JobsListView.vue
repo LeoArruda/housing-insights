@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import { computed, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { ApiHttpError } from "../../api/client.ts";
 import {
@@ -16,58 +17,42 @@ const jobNameQuery = ref("");
 const statusFilter = ref<"" | JobRunStatus>("");
 const limit = ref(INITIAL_LIMIT);
 
-const rows = ref<JobRunRow[]>([]);
-const loading = ref(false);
-const loadError = ref<string | null>(null);
-
-const canLoadMore = computed(() => limit.value < MAX_LIMIT);
-
-function resetPaging() {
-  limit.value = INITIAL_LIMIT;
-}
-
-async function load() {
-  loading.value = true;
-  loadError.value = null;
-  try {
-    const res = await fetchJobRunsList({
+const query = useQuery({
+  queryKey: computed(
+    () =>
+      ["job-runs", jobNameQuery.value, statusFilter.value, limit.value] as const,
+  ),
+  queryFn: () =>
+    fetchJobRunsList({
       job_name: jobNameQuery.value || undefined,
       status: statusFilter.value,
       limit: limit.value,
-    });
-    rows.value = res.data;
-  } catch (e) {
-    if (e instanceof ApiHttpError) {
-      loadError.value = e.message;
-    } else {
-      loadError.value = "Could not load job runs.";
-    }
-    rows.value = [];
-  } finally {
-    loading.value = false;
-  }
-}
+    }),
+});
+
+const rows = computed<JobRunRow[]>(() => query.data.value?.data ?? []);
+const loading = computed(() => query.isPending.value);
+const loadError = computed(() => {
+  if (!query.isError.value || query.error.value == null) return null;
+  const e = query.error.value;
+  if (e instanceof ApiHttpError) return e.message;
+  return e instanceof Error ? e.message : String(e);
+});
+
+const canLoadMore = computed(() => limit.value < MAX_LIMIT);
 
 function applyJobNameFilter() {
   jobNameQuery.value = jobNameInput.value.trim();
-  resetPaging();
+  limit.value = INITIAL_LIMIT;
 }
 
 function onStatusChange() {
-  resetPaging();
+  limit.value = INITIAL_LIMIT;
 }
 
 function loadMore() {
   limit.value = MAX_LIMIT;
 }
-
-watch(
-  [jobNameQuery, statusFilter, limit],
-  () => {
-    void load();
-  },
-  { immediate: true },
-);
 </script>
 
 <template>

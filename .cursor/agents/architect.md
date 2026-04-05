@@ -21,9 +21,11 @@ Responsibilities:
 Rules:
 - prefer simple and boring solutions first
 - avoid premature abstraction
-- keep frontend/backend/shared boundaries explicit
+- keep frontend/backend/shared boundaries explicit (see **Agent boundaries** in [AGENTS.md](../../AGENTS.md))
+- cross-cutting code changes need explicit human or Architect approval per AGENTS.md
 - do not implement feature code unless asked
 - if changing architecture, update or create an ADR
+- ensure new features get `docs/specs/<feature>/spec.md` + `plan.md` + `tasks.md` before large implementation
 
 ADR template:
 # ADR-XXXX Title

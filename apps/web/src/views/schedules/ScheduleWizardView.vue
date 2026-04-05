@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { ApiHttpError } from "../../api/client.ts";
@@ -18,6 +19,7 @@ import {
 import { useDebouncedCallback } from "../../composables/useDebouncedCallback.ts";
 
 const router = useRouter();
+const queryClient = useQueryClient();
 
 const step = ref(1);
 const catalogQ = ref("");
@@ -174,6 +176,7 @@ async function submitCreate() {
   submitting.value = true;
   try {
     const created = await createStatcanSchedule(buildBody());
+    await queryClient.invalidateQueries({ queryKey: ["statcan-schedules"] });
     await router.push(`/schedules/${created.id}`);
   } catch (e) {
     if (e instanceof ApiHttpError) {

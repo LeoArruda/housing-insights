@@ -1,5 +1,7 @@
 # PRD: Web operations console (Vue)
 
+> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../AGENTS.md)), implementation status is canonical in [docs/specs/web-ops-console/tasks.md](../docs/specs/web-ops-console/tasks.md). Verification runs (automated commands, FR spot checks, manual browser notes) are logged in [docs/specs/web-ops-console/verification.md](../docs/specs/web-ops-console/verification.md). User-story acceptance checkboxes below are kept aligned with that `tasks.md` file.
+
 ## Introduction / overview
 
 Operators and leadership need a **browser-based console** on top of the existing ingestion platform (`apps/api`). Today scheduling, job history, and raw payloads are reachable only via REST (no auth) and CLI/daemon. This feature delivers a **Vue 3** app with:
@@ -33,9 +35,9 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] `apps/web` runs with `bun`/`vite` (or repo-standard script documented in README).
-- [ ] Central API base URL from env (e.g. `VITE_API_BASE_URL`).
-- [ ] Typecheck/lint passes for the new package.
+- [x] `apps/web` runs with `bun`/`vite` (or repo-standard script documented in README).
+- [x] Central API base URL from env (e.g. `VITE_API_BASE_URL`).
+- [x] Typecheck/lint passes for the new package.
 
 ---
 
@@ -45,10 +47,10 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] Unauthenticated users cannot access operator routes or Dashboard (redirect to login or static “unauthorized”).
-- [ ] Auth mechanism matches **Resolved decisions**: Bearer token to API; see spec § Resolved decisions.
-- [ ] **Viewer** vs **operator** distinguished by **which shared secret** is used at login (`DASHBOARD_VIEWER_KEY` vs `DASHBOARD_OPERATOR_KEY`), or dev mock (see spec).
-- [ ] Typecheck passes.
+- [x] Unauthenticated users cannot access operator routes or Dashboard (redirect to login or static “unauthorized”).
+- [x] Auth mechanism matches **Resolved decisions**: Bearer token to API; see spec § Resolved decisions.
+- [x] **Viewer** vs **operator** distinguished by **which shared secret** is used at login (`DASHBOARD_VIEWER_KEY` vs `DASHBOARD_OPERATOR_KEY`), or dev mock (see spec).
+- [x] Typecheck passes.
 
 ---
 
@@ -58,12 +60,12 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] Shows **counts** of job runs in the **last 24 hours (UTC)** by `finished_at`, broken down by **success** vs **failed** (include **running** only if `finished_at` is null and status indicates in progress — see spec).
-- [ ] Shows up to **15 most recent failed** job runs (any time), ordered by `finished_at` desc, with job name, time, error snippet, link to detail.
-- [ ] Shows **schedule summary**: count of enabled schedules, count with `last_error` non-null (or equivalent “needs attention”).
-- [ ] Layout is readable on desktop (mobile optional).
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill.
+- [x] Shows **counts** of job runs in the **last 24 hours (UTC)** by `finished_at`, broken down by **success** vs **failed** (include **running** only if `finished_at` is null and status indicates in progress — see spec).
+- [x] Shows up to **15 most recent failed** job runs (any time), ordered by `finished_at` desc, with job name, time, error snippet, link to detail.
+- [x] Shows **schedule summary**: count of enabled schedules, count with `last_error` non-null (or equivalent “needs attention”).
+- [x] Layout is readable on desktop (mobile optional).
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill.
 
 ---
 
@@ -73,11 +75,11 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] Table (or cards) listing schedules with: `product_id`, `frequency`, UTC time fields, `enabled`, `next_run_at`, `last_run_at`, `last_error` (truncated).
-- [ ] Row navigates to detail view with full fields and **advanced** overrides visible (`latest_n`, `data_coordinate`, `data_vector_id`, fetch flags).
-- [ ] Uses existing API: `GET /statcan/schedules` (and PATCH/DELETE entry points as needed for later stories).
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill.
+- [x] Table (or cards) listing schedules with: `product_id`, `frequency`, UTC time fields, `enabled`, `next_run_at`, `last_run_at`, `last_error` (truncated).
+- [x] Row navigates to detail view with full fields and **advanced** overrides visible (`latest_n`, `data_coordinate`, `data_vector_id`, fetch flags).
+- [x] Uses existing API: `GET /statcan/schedules` (and PATCH/DELETE entry points as needed for later stories).
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill.
 
 ---
 
@@ -87,13 +89,13 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] **Step 1:** Search or browse **StatCan cube catalog** (title + product id); user selects one product. *Requires backend support: paginated/search catalog API if not present — see Technical considerations.*
-- [ ] **Step 2:** Choose **frequency** (daily / weekly / monthly), **UTC hour/minute**, and frequency-specific fields (`day_of_week`, `day_of_month`) with inline validation messages matching API rules.
-- [ ] **Step 3 (optional):** Advanced collapsible: `latest_n`, coordinate, vector id, fetch toggles — defaults sensible.
-- [ ] **Step 4:** Review + **Create** calls `POST /statcan/schedules`; success navigates to detail or list; API errors shown to user.
-- [ ] Duplicate `product_id` surfaces **409** message clearly.
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill.
+- [x] **Step 1:** Search or browse **StatCan cube catalog** (title + product id); user selects one product. *Requires backend support: paginated/search catalog API if not present — see Technical considerations.*
+- [x] **Step 2:** Choose **frequency** (daily / weekly / monthly), **UTC hour/minute**, and frequency-specific fields (`day_of_week`, `day_of_month`) with inline validation messages matching API rules.
+- [x] **Step 3 (optional):** Advanced collapsible: `latest_n`, coordinate, vector id, fetch toggles — defaults sensible.
+- [x] **Step 4:** Review + **Create** calls `POST /statcan/schedules`; success navigates to detail or list; API errors shown to user.
+- [x] Duplicate `product_id` surfaces **409** message clearly.
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill.
 
 ---
 
@@ -103,11 +105,11 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] Detail page supports **PATCH** for editable fields (not `product_id` after create).
-- [ ] **Enable/disable** toggle maps to `enabled` boolean.
-- [ ] **Delete** with confirmation dialog; calls `DELETE /statcan/schedules/:id`; handles 404.
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill.
+- [x] Detail page supports **PATCH** for editable fields (not `product_id` after create).
+- [x] **Enable/disable** toggle maps to `enabled` boolean.
+- [x] **Delete** with confirmation dialog; calls `DELETE /statcan/schedules/:id`; handles 404.
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill.
 
 ---
 
@@ -117,11 +119,11 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] Same UI for both roles (read-only); list uses `GET /job-runs` with filters for `job_name` and `status` where supported by API.
-- [ ] Detail uses `GET /job-runs/:id` showing all fields needed for triage (`started_at`, `finished_at`, `status`, `error_message`).
-- [ ] Link from failed run on Dashboard to this detail view.
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill.
+- [x] Same UI for both roles (read-only); list uses `GET /job-runs` with filters for `job_name` and `status` where supported by API.
+- [x] Detail uses `GET /job-runs/:id` showing all fields needed for triage (`started_at`, `finished_at`, `status`, `error_message`).
+- [x] Link from failed run on Dashboard to this detail view.
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill.
 
 ---
 
@@ -131,12 +133,12 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] List uses `GET /raw-payloads` with `source` filter and pagination params aligned with API (`limit`, `offset`).
-- [ ] List columns: `id`, `source`, `source_key`, `fetched_at`, `content_type`, `job_run_id` (link to job run when present).
-- [ ] Detail view shows **formatted JSON** (or pretty-printed text) for `body` plus metadata fields. *If API lacks `GET /raw-payloads/:id`, add it — see Technical considerations.*
-- [ ] Large bodies: lazy load or truncation with “expand” to avoid freezing the tab (reasonable default, e.g. first 50KB warning).
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill.
+- [x] List uses `GET /raw-payloads` with `source` filter and pagination params aligned with API (`limit`, `offset`).
+- [x] List columns: `id`, `source`, `source_key`, `fetched_at`, `content_type`, `job_run_id` (link to job run when present).
+- [x] Detail view shows **formatted JSON** (or pretty-printed text) for `body` plus metadata fields. *If API lacks `GET /raw-payloads/:id`, add it — see Technical considerations.*
+- [x] Large bodies: lazy load or truncation with “expand” to avoid freezing the tab (reasonable default, e.g. first 50KB warning).
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill.
 
 ---
 
@@ -146,12 +148,12 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 **Acceptance criteria:**
 
-- [ ] Viewer cannot access routes for schedule create/edit/delete (hidden + direct URL blocked).
-- [ ] Viewer **can** access `/jobs`, `/jobs/:id`, `/data`, `/data/:id` (read-only; no mutating actions).
-- [ ] Operator retains full access including schedules.
-- [ ] Documented matrix in spec.
-- [ ] Typecheck passes.
-- [ ] Verify in browser using dev-browser skill (both roles).
+- [x] Viewer cannot access routes for schedule create/edit/delete (hidden + direct URL blocked).
+- [x] Viewer **can** access `/jobs`, `/jobs/:id`, `/data`, `/data/:id` (read-only; no mutating actions).
+- [x] Operator retains full access including schedules.
+- [x] Documented matrix in spec.
+- [x] Typecheck passes.
+- [x] Verify in browser using dev-browser skill (both roles).
 
 ---
 

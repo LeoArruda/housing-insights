@@ -1,4 +1,5 @@
-import { authHeaders } from "../auth/state.ts";
+import { getActivePinia } from "pinia";
+import { useAuthStore } from "../stores/auth.ts";
 
 /** Empty string in Vite dev = same-origin `/api` (see vite proxy). Otherwise full base URL, no trailing slash. */
 export function apiBase(): string {
@@ -10,6 +11,14 @@ export function apiBase(): string {
     return "";
   }
   return "http://127.0.0.1:3000";
+}
+
+export function authHeaders(): HeadersInit {
+  const pinia = getActivePinia();
+  if (!pinia) return {};
+  const t = useAuthStore(pinia).token.trim();
+  if (!t) return {};
+  return { Authorization: `Bearer ${t}` };
 }
 
 /** Human-readable API target for login hint. */

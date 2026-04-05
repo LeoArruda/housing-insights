@@ -18,6 +18,14 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 - [x] API client wrapper (fetch) with error shape handling
 - [x] App shell: nav, layout, role-aware menu items
 
+## Frontend foundation (stack alignment — [docs/scope.md](../../../docs/scope.md))
+
+- [x] **Pinia** for session/auth client state (`apps/web/src/stores/auth.ts`); API client reads token via active Pinia
+- [x] **TanStack Query (Vue)** for server state (dashboard summary, schedules, job runs, raw payloads lists); invalidate on mutations where needed
+- [x] **Tailwind CSS v4** + PostCSS (`apps/web/src/assets/main.css`); design tokens aligned with local **`.vue-admin-ref`** (gitignored template), not a full template copy
+- [x] Shared **Button** primitive (`apps/web/src/components/ui/Button.vue`) and **AppLayout** / **LoginView** using theme utilities (`menu-item`, etc.)
+- [x] Legacy **`--hi-*` CSS variables** in `main.css` for scoped views not yet migrated to utility-only styling (bridge until full Tailwind pass)
+
 ## Features
 
 - [x] US-Dashboard: KPI cards + recent failures + schedule health
@@ -34,3 +42,5 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 - [x] `bun test` (api) passes; add web unit tests where valuable (composables, formatters)
 - [x] Browser verify Dashboard + one schedule flow (dev-browser skill)
 - [x] Update [docs/architecture.md](../../architecture.md) with `apps/web` and console overview
+- [x] Keep [verification.md](./verification.md) updated after material console changes (automated + manual / dev-browser as needed)
+- [x] Enforce spec-driven + agent boundaries via [AGENTS.md](../../../AGENTS.md) and [.cursor/rules/spec-driven-delivery.mdc](../../../.cursor/rules/spec-driven-delivery.mdc)

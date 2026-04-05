@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useRawPayloadList } from "./useRawPayloadList.ts";
 
@@ -10,17 +9,12 @@ const {
   rows,
   loading,
   error,
-  load,
   applySourceFilter,
   goPrev,
   goNext,
   canPrev,
   canNext,
 } = useRawPayloadList();
-
-onMounted(() => {
-  void load();
-});
 
 function onApplyFilter() {
   void applySourceFilter();
@@ -118,7 +112,7 @@ function onNext() {
       <button
         type="button"
         class="btn btn-ghost"
-        :disabled="loading || !canNext()"
+        :disabled="loading || !canNext"
         @click="onNext"
       >
         Next

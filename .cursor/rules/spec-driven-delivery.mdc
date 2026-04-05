@@ -1,0 +1,38 @@
+---
+description: Spec-driven delivery, PRD/tasks alignment, and agent boundaries for housing-insights
+alwaysApply: true
+---
+
+# Spec-driven delivery and agents
+
+Read [AGENTS.md](../../AGENTS.md) first.
+
+## Before implementing
+
+1. Identify the feature folder under `docs/specs/<feature>/` (`spec.md`, `plan.md`, `tasks.md`). If missing for new work, stop and add the minimum spec/plan/tasks (or ask the human to confirm scope).
+2. Treat **`tasks.md` as canonical** for what is done vs pending. Update checkboxes when you complete work.
+3. If the feature has a PRD under `tasks/` (e.g. web ops console), **keep PRD acceptance checkboxes aligned** with `tasks.md` in the same delivery.
+
+## After material changes
+
+- Append a verification entry to `docs/specs/<feature>/verification.md` when that file exists (automated commands + optional manual/browser notes).
+- Run the repo's documented checks for touched packages (e.g. `bun run typecheck` / `bun test` in `apps/web` and/or root).
+
+## Agent boundaries
+
+- **Backend:** `apps/api/**`, migrations — not `apps/web/**`.
+- **Frontend:** `apps/web/**` — not `apps/api/**` without explicit API coordination.
+- **Architect:** system docs and ADRs — not silent cross-cutting code without approval.
+- **QA Auditor:** gates and reports — not expanding product scope unless asked.
+
+Use **Orchestrator** thinking when multiple agents' trees would change in one request.
+
+## Skills
+
+- Vue SFCs / composables → follow `.cursor/skills/vue/SKILL.md`.
+- Bun / SQLite in this repo → `.cursor/skills/bun-patterns/SKILL.md`, `.cursor/skills/bun-sqlite/SKILL.md`.
+
+## Web ops console
+
+- Spec: `docs/specs/web-ops-console/`. PRD: `tasks/prd-web-ops-console.md`.
+- Optional local UI reference: `.vue-admin-ref` (often gitignored) — patterns/tokens only, not a full vendor copy.

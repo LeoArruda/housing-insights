@@ -20,121 +20,66 @@ const jobsActive = computed(
 const dataActive = computed(
   () => route.name === "data" || route.name === "data-detail",
 );
+
+function navItemClass(active: boolean) {
+  return active
+    ? "menu-item menu-item-active rounded-lg px-3 py-2"
+    : "menu-item menu-item-inactive rounded-lg px-3 py-2";
+}
 </script>
 
 <template>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">Housing Insights</div>
-      <p class="tag">Operations</p>
-      <nav class="nav">
+  <div
+    class="flex min-h-screen bg-gray-50 font-outfit dark:bg-gray-900"
+  >
+    <aside
+      class="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-white px-4 py-6 dark:border-gray-800 dark:bg-gray-900"
+    >
+      <div class="text-lg font-semibold text-gray-900 dark:text-white">
+        Housing Insights
+      </div>
+      <p
+        class="mb-6 mt-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+      >
+        Operations
+      </p>
+      <nav class="flex flex-col gap-1">
         <RouterLink
           to="/dashboard"
-          class="nav-link"
-          active-class="nav-link-active"
+          :class="navItemClass(route.name === 'dashboard')"
         >
           Dashboard
         </RouterLink>
         <RouterLink
           v-if="isOperator"
           to="/schedules"
-          class="nav-link"
-          :class="{ 'nav-link-active': scheduleActive }"
+          :class="navItemClass(scheduleActive)"
         >
           Schedules
         </RouterLink>
         <RouterLink
           to="/jobs"
-          class="nav-link"
-          :class="{ 'nav-link-active': jobsActive }"
+          :class="navItemClass(jobsActive)"
         >
           Job runs
         </RouterLink>
         <RouterLink
           to="/data"
-          class="nav-link"
-          :class="{ 'nav-link-active': dataActive }"
+          :class="navItemClass(dataActive)"
         >
           Raw data
         </RouterLink>
       </nav>
-      <button type="button" class="logout" @click="logout">Sign out</button>
+      <button
+        type="button"
+        class="menu-item menu-item-inactive mt-8 w-full rounded-lg border border-gray-200 px-3 py-2 text-left text-sm dark:border-gray-700"
+        @click="logout"
+      >
+        Sign out
+      </button>
     </aside>
-    <main class="main">
+    <main class="flex-1 overflow-auto p-4 md:p-6">
       <RouterView />
     </main>
   </div>
 </template>
-
-<style scoped>
-.shell {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  padding: 1.25rem 1rem;
-  border-right: 1px solid var(--hi-border);
-  background: var(--hi-sidebar);
-}
-
-.brand {
-  font-weight: 600;
-  font-size: 1rem;
-  letter-spacing: -0.02em;
-}
-
-.tag {
-  margin: 0.15rem 0 1.25rem;
-  font-size: 0.75rem;
-  color: var(--hi-muted);
-}
-
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.nav-link {
-  display: block;
-  padding: 0.45rem 0.6rem;
-  border-radius: 6px;
-  color: var(--hi-fg);
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.nav-link:hover {
-  background: var(--hi-hover);
-}
-
-.nav-link-active {
-  background: var(--hi-active-bg);
-  font-weight: 500;
-}
-
-.logout {
-  margin-top: 1.5rem;
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.85rem;
-  border: 1px solid var(--hi-border);
-  border-radius: 6px;
-  background: transparent;
-  cursor: pointer;
-  color: var(--hi-fg);
-}
-
-.logout:hover {
-  background: var(--hi-hover);
-}
-
-.main {
-  flex: 1;
-  padding: 1.5rem 2rem;
-  overflow: auto;
-}
-</style>

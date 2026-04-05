@@ -67,7 +67,7 @@ See [docs/specs/statcan-wds-automation/spec.md](specs/statcan-wds-automation/spe
 - **API base URL:** `VITE_API_BASE_URL` in `apps/web/.env` (optional). If **unset or empty** during `vite` dev, the app calls same-origin **`/api/...`**; Vite proxies `/api` to `http://127.0.0.1:3000` and rewrites the path (see `apps/web/vite.config.ts`). That avoids browser CORS issues when the UI is on `http://localhost:5173` and the API on another host/port.
 - **Direct API URL:** If `VITE_API_BASE_URL` is set (e.g. `http://127.0.0.1:3000`), the browser calls that origin; then **`CORS_ALLOW_ORIGIN`** on `apps/api` must match the **exact** SPA origin (including `localhost` vs `127.0.0.1`).
 - **Auth (v1):** Optional env `DASHBOARD_OPERATOR_KEY` and/or `DASHBOARD_VIEWER_KEY` on the API. If either is set, protected routes require `Authorization: Bearer <key>`; operator key → full access; viewer key → no schedule/catalog routes (403). If **neither** is set, middleware is off (local/tests). The SPA stores the token in `sessionStorage` after sign-in and attaches it on API calls.
-- **Spec:** [docs/specs/web-ops-console/spec.md](specs/web-ops-console/spec.md), PRD `tasks/prd-web-ops-console.md`.
+- **Spec / tracking:** [docs/specs/web-ops-console/spec.md](specs/web-ops-console/spec.md); agent checklist [tasks.md](specs/web-ops-console/tasks.md); verification log [verification.md](specs/web-ops-console/verification.md). PRD: [tasks/prd-web-ops-console.md](../tasks/prd-web-ops-console.md).
 
 ## Future (not implemented here)
 

@@ -5,6 +5,15 @@
 **Date**: 2026-04-03  
 **Related PRD**: [tasks/prd-web-ops-console.md](../../../tasks/prd-web-ops-console.md)
 
+## Implementation tracking (canonical)
+
+For **AGENTS.md** spec-driven delivery:
+
+- **[tasks.md](./tasks.md)** is the **canonical** checklist for implementation status (backend, frontend, features, quality). Agents should update `tasks.md` when work completes.
+- **[verification.md](./verification.md)** records verification runs (automated commands, code-level spot checks for PRD FR-* items, and manual browser notes when performed).
+- The **PRD** ([tasks/prd-web-ops-console.md](../../../tasks/prd-web-ops-console.md)) remains the stakeholder-facing product contract; its per-story checkboxes are **kept in sync** with `tasks.md` when features ship so both views stay aligned.
+- Repo-wide enforcement: [AGENTS.md](../../../AGENTS.md) (**Documentation hierarchy**, **Agent boundaries**, **Definition of Done**) and Cursor rule [.cursor/rules/spec-driven-delivery.mdc](../../../.cursor/rules/spec-driven-delivery.mdc) (**alwaysApply**).
+
 ## Summary
 
 Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard** (all roles), **StatCan schedule management** with **guided creation** (**operators only**), **job run** inspection (**operators + viewers**), and **raw payload** list + JSON detail (**operators + viewers**). Aligns with backend tables `job_runs`, `raw_payloads`, `statcan_product_schedules`, and `statcan_cube_catalog`.
@@ -76,6 +85,8 @@ Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard
 - **FR-4:** Backend exposes **catalog search/list** endpoint if not present (see plan).
 - **FR-5:** Backend exposes **GET raw-payloads by id** if not present.
 - **FR-6:** Viewer cannot read or mutate schedules (UI blocks routes; API returns **403** on `/statcan/schedules` when Bearer is viewer key).
+- **FR-8 (PRD):** API errors surfaced in the UI via `ApiHttpError` / `formatApiError` and `role="alert"` on error copy (shared client in `apps/web/src/api/client.ts`).
+- **FR-9 (PRD):** Schedule-related copy and columns **label UTC** (list, wizard, detail); Dashboard window labeled **24h (UTC)**.
 
 ## Non-goals
 

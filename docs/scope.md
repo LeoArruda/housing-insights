@@ -83,9 +83,10 @@ Establish the initial process for feature delivery using:
 This includes:
 
 - templates or reference examples
-- expected ownership by agent role
-- definition of done expectations
+- expected ownership by agent role (see [AGENTS.md](../AGENTS.md) **Agent boundaries** and [.cursor/agents/](../.cursor/agents/))
+- definition of done expectations (**`tasks.md` canonical**, PRD alignment, `verification.md` when present)
 - reporting expectations after implementation
+- Cursor-wide reminder: [.cursor/rules/spec-driven-delivery.mdc](../.cursor/rules/spec-driven-delivery.mdc) (`alwaysApply`)
 
 ## In scope for the first implementation slices
 

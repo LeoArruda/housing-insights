@@ -118,11 +118,10 @@ The system follows a layered ingestion model:
 - Cron-based scheduling (initial)
 - Job tracking + retry logic
 
-### Frontend (planned)
-- Vue 3
-- Vite
-- Pinia + TanStack Query
-- Tailwind CSS
+### Frontend (operations console)
+- Vue 3, Vite, TypeScript (`apps/web`)
+- Pinia + TanStack Query + Tailwind CSS  
+- Runbook: [apps/web/README.md](apps/web/README.md)
 
 ---
 
@@ -135,6 +134,7 @@ docs/specs/           # feature specs (spec.md, plan.md, tasks.md)
 apps/api/             # Bun API: HTTP read API, CLI, daemon scheduler
   src/                # connectors, db, jobs, server, entries
   test/               # tests and fixtures (no live network in CI)
+apps/web/             # Vue 3 ops console (see apps/web/README.md)
 packages/types/       # shared Zod schemas and types
 ```
 
@@ -157,6 +157,12 @@ bun run cli -- job run statcan-wds-metadata
 bun run cli -- job run statcan-wds-data
 bun run daemon              # long-lived scheduler (cron from env; see apps/api/.env.example)
 bun test                    # runs apps/api tests (fixtures only)
+```
+
+**Operations console (Vue):** with the API running, in another terminal:
+
+```bash
+cd apps/web && bun run dev    # SPA; see apps/web/README.md for VITE_API_BASE_URL
 ```
 
 Useful HTTP endpoints: `GET /health`, `GET /health/ready`, `GET /job-runs`, `GET /raw-payloads`.

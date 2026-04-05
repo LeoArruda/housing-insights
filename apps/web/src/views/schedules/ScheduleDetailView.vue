@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { useQueryClient } from "@tanstack/vue-query";
+import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { ApiHttpError } from "../../api/client.ts";
 import {
@@ -9,7 +10,7 @@ import {
   type ScheduleFrequency,
   type StatcanSchedule,
 } from "../../api/statcan-schedules.ts";
-import { useStatcanSchedules } from "../../composables/useStatcanSchedules.ts";
+import { useStatcanSchedulesQuery } from "../../composables/useStatcanSchedules.ts";
 import {
   formatApiError,
   validateWizardAdvanced,
@@ -18,6 +19,8 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
+
 const id = computed(() => {
   const raw = route.params.id;
   const n = Number(typeof raw === "string" ? raw : raw?.[0]);
@@ -26,20 +29,32 @@ const id = computed(() => {
 
 const invalidRouteId = computed(() => !Number.isFinite(id.value));
 
-const { loading, error, load, findById } = useStatcanSchedules();
+const {
+  data: schedules,
+  isPending,
+  isFetched,
+  isError,
+  error: listError,
+} = useStatcanSchedulesQuery();
 
 const schedule = computed<StatcanSchedule | undefined>(() => {
   const n = id.value;
   if (!Number.isFinite(n)) return undefined;
-  return findById(n);
+  return schedules.value?.find((s) => s.id === n);
 });
 
-const loadedOnce = ref(false);
+const listErrMsg = computed(() => {
+  if (!isError.value || listError.value == null) return null;
+  return listError.value instanceof Error
+    ? listError.value.message
+    : String(listError.value);
+});
+
 const notFound = computed(
   () =>
-    loadedOnce.value &&
-    !loading.value &&
-    !error.value &&
+    isFetched.value &&
+    !isPending.value &&
+    !isError.value &&
     Number.isFinite(id.value) &&
     schedule.value == null,
 );
@@ -86,12 +101,9 @@ watch(
   { immediate: true },
 );
 
-onMounted(async () => {
-  if (!invalidRouteId.value) {
-    await load();
-  }
-  loadedOnce.value = true;
-});
+async function refreshSchedules() {
+  await queryClient.invalidateQueries({ queryKey: ["statcan-schedules"] });
+}
 
 function normalizedLatestN(v: number | null): number | null {
   if (v == null || Number.isNaN(v)) return null;
@@ -131,7 +143,7 @@ async function onToggleEnabled(ev: Event) {
   patchError.value = null;
   try {
     await patchStatcanSchedule(s.id, { enabled: next });
-    await load();
+    await refreshSchedules();
   } catch (e) {
     el.checked = !next;
     if (e instanceof ApiHttpError) {
@@ -167,7 +179,7 @@ async function saveEdits() {
   saving.value = true;
   try {
     await patchStatcanSchedule(s.id, body);
-    await load();
+    await refreshSchedules();
   } catch (e) {
     if (e instanceof ApiHttpError) {
       patchError.value = formatApiError(e);
@@ -227,11 +239,11 @@ const dowOptions = [
 
     <h1 class="title">Schedule detail</h1>
 
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-if="listErrMsg" class="error" role="alert">{{ listErrMsg }}</p>
     <p v-else-if="invalidRouteId" class="error" role="alert">
       Invalid schedule id.
     </p>
-    <p v-else-if="loading && !loadedOnce" class="muted">Loading…</p>
+    <p v-else-if="isPending && !isFetched" class="muted">Loading…</p>
     <p v-else-if="notFound" class="error" role="alert">
       No schedule with this id. It may have been deleted.
     </p>

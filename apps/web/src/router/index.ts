@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { authState, restoreSession } from "../auth/state.ts";
+import { useAuthStore } from "../stores/auth.ts";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,27 +69,28 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-  restoreSession();
+  const auth = useAuthStore();
+  auth.restoreFromStorage();
 
   const isPublic = to.matched.some((r) => r.meta.public);
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
   const operatorOnly = to.matched.some((r) => r.meta.operatorOnly);
 
   if (isPublic) {
-    if (authState.role != null && to.name === "login") {
+    if (auth.role != null && to.name === "login") {
       return { name: "dashboard" };
     }
     return true;
   }
 
   if (requiresAuth) {
-    if (authState.role == null) {
+    if (auth.role == null) {
       return {
         name: "login",
         query: { redirect: to.fullPath },
       };
     }
-    if (operatorOnly && authState.role !== "operator") {
+    if (operatorOnly && auth.role !== "operator") {
       return { name: "dashboard" };
     }
   }

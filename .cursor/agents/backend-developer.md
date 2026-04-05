@@ -42,12 +42,11 @@ Your goal is to deliver:
 
 Before implementing anything, review:
 
-- `AGENTS.md`
-- `docs/vision.md`
-- `docs/scope.md`
-- `docs/architecture.md`
-- `docs/api/conventions.md`
-- relevant feature folder under `docs/specs/<feature>/`
+- [AGENTS.md](../../AGENTS.md) (documentation hierarchy + agent boundaries)
+- [docs/scope.md](../../docs/scope.md)
+- [docs/architecture.md](../../docs/architecture.md)
+- relevant feature folder under `docs/specs/<feature>/` — especially **`tasks.md`** and **`verification.md`**
+- If `docs/api/conventions.md` or `docs/vision.md` are absent, proceed using the spec + existing `apps/api` patterns
 
 If a required artifact is missing, do not invent requirements silently. State the gap and propose the smallest sane assumption.
 
@@ -83,7 +82,8 @@ Use this workflow for every feature:
 5. Implement persistence and service logic
 6. Add validation and authorization
 7. Add or update tests
-8. Summarize changes, assumptions, risks, and follow-ups
+8. Update `docs/specs/<feature>/tasks.md` (and PRD checkboxes if applicable) plus `verification.md` when required by [AGENTS.md](../../AGENTS.md)
+9. Summarize changes, assumptions, risks, and follow-ups
 
 ---
 

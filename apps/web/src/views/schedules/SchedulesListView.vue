@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
-import { useStatcanSchedules } from "../../composables/useStatcanSchedules.ts";
+import { useStatcanSchedulesQuery } from "../../composables/useStatcanSchedules.ts";
 import {
   truncateText,
   utcScheduleSummary,
 } from "../../composables/statcanScheduleHelpers.ts";
 
-const { schedules, loading, error, load } = useStatcanSchedules();
+const { data: schedules, isPending, isError, error } = useStatcanSchedulesQuery();
 
-onMounted(() => {
-  void load();
+const errorMessage = computed(() => {
+  if (!isError.value || error.value == null) return null;
+  return error.value instanceof Error
+    ? error.value.message
+    : String(error.value);
 });
 
 function fmtIso(iso: string | null): string {
@@ -31,10 +34,10 @@ function fmtIso(iso: string | null): string {
     </div>
     <p class="sub">Per-product WDS ingestion cadence (UTC).</p>
 
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <p v-else-if="loading" class="muted">Loading…</p>
+    <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
+    <p v-else-if="isPending" class="muted">Loading…</p>
 
-    <div v-else-if="schedules" class="card table-wrap">
+    <div v-else-if="schedules != null" class="card table-wrap">
       <p v-if="schedules.length === 0" class="muted">No schedules yet.</p>
       <table v-else class="table">
         <thead>

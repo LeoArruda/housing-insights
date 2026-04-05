@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { apiFetch, ApiHttpError } from "../api/client.ts";
 
@@ -20,20 +21,17 @@ type Summary = {
   };
 };
 
-const summary = ref<Summary | null>(null);
-const loadError = ref<string | null>(null);
+const { data: summary, isPending, isError, error } = useQuery({
+  queryKey: ["stats", "summary", "24h"] as const,
+  queryFn: () => apiFetch<Summary>("/stats/summary?window=24h"),
+});
 
-onMounted(async () => {
-  loadError.value = null;
-  try {
-    summary.value = await apiFetch<Summary>("/stats/summary?window=24h");
-  } catch (e) {
-    if (e instanceof ApiHttpError) {
-      loadError.value = e.message;
-    } else {
-      loadError.value = "Could not load dashboard.";
-    }
-  }
+const loadError = computed(() => {
+  if (!isError.value || error.value == null) return null;
+  if (error.value instanceof ApiHttpError) return error.value.message;
+  return error.value instanceof Error
+    ? error.value.message
+    : "Could not load dashboard.";
 });
 </script>
 
@@ -43,8 +41,9 @@ onMounted(async () => {
     <p class="sub">Last 24h (UTC) job outcomes and schedule health.</p>
 
     <p v-if="loadError" class="error" role="alert">{{ loadError }}</p>
+    <p v-else-if="isPending" class="muted">Loading…</p>
 
-    <div v-else-if="summary" class="grid">
+    <div v-else-if="summary != null" class="grid">
       <section class="card">
         <h2>Finished in window</h2>
         <dl class="kpi">
@@ -81,7 +80,7 @@ onMounted(async () => {
       </section>
     </div>
 
-    <section v-if="summary" class="card failures">
+    <section v-if="summary != null" class="card failures">
       <h2>Recent failed runs</h2>
       <p v-if="summary.recent_failed_runs.length === 0" class="muted">
         None in history.

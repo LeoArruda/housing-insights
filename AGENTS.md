@@ -1,16 +1,3 @@
-Great — I reviewed your existing file and kept what’s strong (spec-driven flow, agent discipline, repo shape), but tightened the goals, aligned it with your data platform use case, and made it more actionable for Cursor multi-agents.
-
-Below is a clean, improved AGENTS.md that:
-	•	clearly defines the product goal (signals platform)
-	•	preserves your spec-driven workflow
-	•	integrates multi-agent responsibilities with your architecture
-	•	aligns with your Bun + TS + ingestion platform direction
-	•	keeps your repo structure but refines it for this project
-
-⸻
-
-✅ Improved AGENTS.md
-
 # AGENTS.md
 
 ## Project Overview
@@ -103,6 +90,40 @@ docs/specs//
    - acceptance criteria verified
 
 🚫 No large implementation without spec + plan.
+
+### Documentation hierarchy (PRD, spec, tasks)
+
+| Artifact | Role | Location |
+|----------|------|----------|
+| **tasks.md** | **Canonical** agent checklist — mark `[x]` when work is done | `docs/specs/<feature>/tasks.md` |
+| **spec.md** | Technical spec, resolved decisions, test scenarios | `docs/specs/<feature>/spec.md` |
+| **plan.md** | Implementation plan, phases, risks | `docs/specs/<feature>/plan.md` |
+| **PRD** (when used) | Stakeholder user stories / FR list; **keep story checkboxes aligned** with `tasks.md` | e.g. [tasks/prd-web-ops-console.md](tasks/prd-web-ops-console.md) |
+| **verification.md** (when present) | Log automated + manual verification after material changes | `docs/specs/<feature>/verification.md` |
+
+Rules:
+
+- Pick the correct **`docs/specs/<feature>/`** folder before coding; if none exists for new work, **Product Scope / Architect** creates the trio (`spec.md`, `plan.md`, `tasks.md`) first.
+- **Update `tasks.md`** in the same PR or session as the implementation.
+- **Foundation work** ([docs/scope.md](docs/scope.md)) still requires a **plan/tasks slice** in the affected feature spec (e.g. [docs/specs/web-ops-console/plan.md](docs/specs/web-ops-console/plan.md)) so stack changes are traceable.
+
+### Agent boundaries (mandatory)
+
+Match work to **one primary owner** under [.cursor/agents/](.cursor/agents/). Cross-cutting or conflicting edits need **Orchestrator** sequencing or **human** approval.
+
+| Agent | Primary ownership | Out of bounds |
+|-------|-------------------|---------------|
+| **Orchestrator** | Sequencing, spec gates, conflict avoidance between agents | Owning a single code area by default |
+| **Product Scope** | Problem, acceptance criteria, `docs/specs/<feature>/spec.md` | Implementation |
+| **Architect** | [docs/architecture.md](docs/architecture.md), ADRs, cross-app contracts | Feature code unless explicitly asked |
+| **Backend Developer** | `apps/api/**`, DB migrations, API behavior | `apps/web/**` UI |
+| **Frontend Developer** | `apps/web/**` | `apps/api/**` without coordinating API contract |
+| **QA Auditor** | Run typecheck/tests; report gaps | New product scope unless asked |
+| **Security Auditor** | Security review of new auth/surface/API | Routine feature implementation |
+
+**Skills:** For Vue work, follow [.cursor/skills/vue/SKILL.md](.cursor/skills/vue/SKILL.md). For Bun/SQLite patterns in this repo, use [.cursor/skills/bun-patterns/SKILL.md](.cursor/skills/bun-patterns/SKILL.md) and [.cursor/skills/bun-sqlite/SKILL.md](.cursor/skills/bun-sqlite/SKILL.md).
+
+**Web ops console:** Spec folder [docs/specs/web-ops-console/](docs/specs/web-ops-console/). Optional local design reference **`.vue-admin-ref`** (gitignored): use for tokens/patterns only; do not copy the whole template app.
 
 ---
 
@@ -210,11 +231,11 @@ Owns:
 
 ---
 
-### Frontend Agent (future)
-- Vue 3 app
-- dashboards
-- data visualization
-- minimal state management
+### Frontend Agent
+- **Vue 3** app under `apps/web` (operations console today)
+- dashboards / data views per spec
+- **Pinia** (minimal client state) + **TanStack Query** (server state) + **Tailwind** per [docs/scope.md](docs/scope.md)
+- does **not** own API or DB implementation
 
 ---
 
@@ -293,7 +314,7 @@ docs/
 
 apps/
   api/        # Bun backend
-  web/        # Vue frontend (future)
+  web/        # Vue 3 operations console
 
 packages/
   types/
@@ -421,6 +442,8 @@ A task is complete when:
 	•	code compiles
 	•	types are correct
 	•	tests pass
+	•	**`docs/specs/<feature>/tasks.md` updated** (and PRD checkboxes aligned if the feature has a PRD)
+	•	**`verification.md` updated** when the spec folder defines one and the change is user-visible or risky
 	•	docs updated if needed
 	•	no architecture violations
 	•	behavior is deterministic

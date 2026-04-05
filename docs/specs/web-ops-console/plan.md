@@ -58,6 +58,19 @@ flowchart LR
 6. **RBAC polish** — viewer vs operator routes.
 7. **Docs** — README runbook for `apps/web` + env vars.
 
+## Frontend foundation (spec slice; aligns with [docs/scope.md](../../../docs/scope.md))
+
+This slice documents stack work that supports the ops console but is **not** a separate product feature in the PRD. It satisfies **AGENTS.md** “spec + plan” traceability for meaningful cross-cutting UI changes.
+
+| Area | Decision |
+|------|-----------|
+| **Global client state** | Pinia store for auth session (replaces ad-hoc module state). |
+| **Server state** | `@tanstack/vue-query` for reads/lists; keep mutations explicit with `invalidateQueries` where lists must refresh. |
+| **Styling** | Tailwind v4 + `@theme` tokens in `apps/web/src/assets/main.css`; sidebar/nav patterns and primitives informed by **`.vue-admin-ref`** (local-only reference). |
+| **Compatibility** | `:root` / `.dark` **`--hi-*`** aliases preserve legacy scoped Vue styles until views are migrated to utilities. |
+
+**Out of scope for this slice:** full removal of scoped `--hi-*` CSS from every view; dark-mode toggle UI (Tailwind `dark:` variants ready when `html` gets `class="dark"`).
+
 ## Risks
 
 - **Large JSON bodies** — browser memory; mitigate truncation/warning.

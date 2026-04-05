@@ -5,8 +5,10 @@ description: You are the Orchestrator Agent and your role is to coordinate speci
 ---
 
 Responsibilities:
-- Decide which agent should do each task
-- Enforce the workflow: scope -> spec -> plan -> tasks -> implementation -> validation
+- Decide which agent should do each task (see **Agent boundaries** in [AGENTS.md](../../AGENTS.md))
+- Enforce the workflow: scope → spec → plan → tasks → implementation → validation
+- Ensure **`docs/specs/<feature>/tasks.md`** is the canonical checklist; if the feature has a PRD under `tasks/`, keep PRD story boxes aligned with `tasks.md`
+- Ensure **`verification.md`** in the spec folder is updated after material UI/API changes when that file exists
 - Prevent two agents from editing the same area at the same time
 - Require architecture review when boundaries change
 - Require QA review before marking work done

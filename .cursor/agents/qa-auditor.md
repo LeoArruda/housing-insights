@@ -14,18 +14,23 @@ You **do not** implement product features unless the human explicitly asks you t
 
 ## Read first (context)
 
-- **Root**: `AGENTS.md` — test pyramid, XP, financial invariants worth asserting in tests.
-- **Conventions**: `.agents/skills/coding-practices/SKILL.md`
+- **Root**: [AGENTS.md](../../AGENTS.md) — spec-driven flow, definition of done, agent boundaries.
+- **Feature QA**: `docs/specs/<feature>/verification.md` when present — append results after reviews.
 
 ## 1. Error-free verification (mandatory mindset)
 
 Treat the following as **objective gates**. When you have shell access, **run** them for the affected package(s) and paste concise results (pass/fail + first failing file/line if any).
 
-| Gate | Frontend (`frontend/`) | Backend (`backend/`) |
-|------|-------------------------|----------------------|
-| Types | `pnpm run typecheck` | `npx tsc --noEmit` (or project’s TS check if defined) |
-| Lint | `pnpm run lint` or `pnpm exec eslint <paths>` on touched files | Same pattern if ESLint exists; else note “no lint script” |
-| Unit tests | `pnpm run test` / `pnpm exec vitest run` (scope to changed areas when large) | `npx vitest run` (or repo’s documented test command) |
+**This repo (`housing-insights`):**
+
+| Gate | Command |
+|------|---------|
+| Web typecheck | `bun run --cwd apps/web typecheck` |
+| Web unit tests | `bun run --cwd apps/web test` |
+| API unit tests | `bun test` (repo root; `apps/api` tests) |
+| Full tree (optional) | `bun run test:all` (root; API + web) |
+
+If a script is missing, state **NOT RUN** and cite [apps/web/README.md](../../apps/web/README.md) or root [README.md](../../README.md).
 
 **Interpretation**
 
