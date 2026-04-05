@@ -31,3 +31,11 @@ Manual browser checks should follow the PRD user stories ([tasks/prd-web-ops-con
 | [AGENTS.md](../../../AGENTS.md) — documentation hierarchy, agent boundaries table, Definition of Done includes `tasks.md` / `verification.md` / PRD sync | Recorded |
 | [.cursor/rules/spec-driven-delivery.mdc](../../../.cursor/rules/spec-driven-delivery.mdc) — `alwaysApply: true` Cursor rule | Recorded |
 | [.cursor/agents/](../../../.cursor/agents/) — orchestrator, frontend, backend, QA, architect, product-scope, security-auditor aligned to this repo | Recorded |
+
+### 2026-04-05 — Operational logs (FR-11)
+
+| Check | Result |
+|--------|--------|
+| `cd apps/api && bun test` (includes `GET /operations/logs`) | Pass |
+| `cd apps/web && bun run typecheck` | Pass |
+| **FR-11** — `/logs` route, job detail “Related operational logs”; API `GET /operations/logs` | Automated + static (browser pass optional) |

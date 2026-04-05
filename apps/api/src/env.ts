@@ -42,6 +42,11 @@ const envSchema = z.object({
   /** Max `statcan-wds-data` raw rows processed per `statcan-wds-data-normalize` job run. */
   STATCAN_WDS_NORMALIZE_BATCH_LIMIT: z.coerce.number().min(1).max(5000).default(500),
 
+  /** Append operational JSONL events to this path (optional). */
+  OPERATIONS_LOG_JSONL_PATH: z.string().optional(),
+  /** Delete `operation_logs` rows older than this many days (prune CLI / daemon). */
+  OPERATIONS_LOG_RETENTION_DAYS: z.coerce.number().min(1).max(3650).default(30),
+
   DAEMON_STATCAN_RSS_CRON: z.string().default("0 * * * *"),
   DAEMON_BOC_RSS_CRON: z.string().default("15 * * * *"),
   DAEMON_STATCAN_CATALOG_CRON: z.string().default("0 2 * * 0"),
@@ -52,6 +57,8 @@ const envSchema = z.object({
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),
   /** If set (non-empty), daemon runs `statcan-wds-data-normalize` on this cron. Omit to run via CLI only. */
   DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON: z.string().optional(),
+  /** If set (non-empty), daemon runs operational log retention prune on this cron. */
+  DAEMON_OPERATIONS_LOG_PRUNE_CRON: z.string().optional(),
 
   /** If set, `Authorization: Bearer <token>` required on API routes except `/health` and `/health/ready`. Viewer cannot access `/statcan/schedules` or `/statcan/catalog`. */
   DASHBOARD_OPERATOR_KEY: z.string().optional(),

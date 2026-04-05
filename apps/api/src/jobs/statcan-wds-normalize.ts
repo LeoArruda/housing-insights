@@ -1,4 +1,5 @@
 import * as jobRunsRepo from "../db/repositories/job-runs.ts";
+import { appendOperationalLog } from "../logging/operational.ts";
 import {
   insertBatchWithObservations,
   insertNormalizeError,
@@ -24,6 +25,13 @@ export async function jobStatcanWdsDataNormalize(
   let ok = 0;
   let err = 0;
   let skippedRace = 0;
+
+  appendOperationalLog(ctx.db, ctx.env, {
+    source: `job:${STATCAN_WDS_DATA_NORMALIZE_JOB}`,
+    level: "info",
+    jobRunId: runId,
+    message: "Job started",
+  });
 
   try {
     const pending = listPendingStatcanWdsDataPayloads(ctx.db, limit);
@@ -65,12 +73,28 @@ export async function jobStatcanWdsDataNormalize(
     }
 
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
-    console.info(
-      `[${STATCAN_WDS_DATA_NORMALIZE_JOB}] scanned=${pending.length} ok=${ok} err=${err} skipped_race=${skippedRace}`,
-    );
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: `job:${STATCAN_WDS_DATA_NORMALIZE_JOB}`,
+      level: "info",
+      jobRunId: runId,
+      message: `Normalize batch complete: scanned=${pending.length} ok=${ok} err=${err} skipped_race=${skippedRace}`,
+      detail: {
+        scanned: pending.length,
+        ok,
+        err,
+        skippedRace,
+      },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     jobRunsRepo.finishJobRun(ctx.db, runId, "failed", msg);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: `job:${STATCAN_WDS_DATA_NORMALIZE_JOB}`,
+      level: "error",
+      jobRunId: runId,
+      message: msg,
+      detail: { stack: e instanceof Error ? e.stack : undefined },
+    });
     throw e;
   }
 }

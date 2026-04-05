@@ -165,7 +165,7 @@ bun test                    # runs apps/api tests (fixtures only)
 cd apps/web && bun run dev    # SPA; see apps/web/README.md for VITE_API_BASE_URL
 ```
 
-Useful HTTP endpoints: `GET /health`, `GET /health/ready`, `GET /job-runs`, `GET /raw-payloads`, `GET /statcan/wds/observations` (after running job `statcan-wds-data-normalize`).
+Useful HTTP endpoints: `GET /health`, `GET /health/ready`, `GET /job-runs`, `GET /operations/logs`, `GET /raw-payloads`, `GET /statcan/wds/observations` (after running job `statcan-wds-data-normalize`). Prune old log rows: `bun run cli -- logs prune` (from `apps/api`; see `OPERATIONS_LOG_RETENTION_DAYS`).
 
 **Note:** Run the API and the daemon as **separate processes** only if you use two different database files, or coordinate writes—SQLite is a single-writer store in this iteration.
 

@@ -26,4 +26,24 @@ export const rawPayloadRowSchema = z.object({
 });
 export type RawPayloadRow = z.infer<typeof rawPayloadRowSchema>;
 
+export const operationLogLevelSchema = z.enum([
+  "debug",
+  "info",
+  "warn",
+  "error",
+]);
+export type OperationLogLevel = z.infer<typeof operationLogLevelSchema>;
+
+export const operationLogRowSchema = z.object({
+  id: z.number().int(),
+  occurred_at: z.string(),
+  level: operationLogLevelSchema,
+  source: z.string(),
+  job_run_id: z.number().int().nullable(),
+  message: z.string(),
+  detail: z.string().nullable(),
+  correlation_id: z.string().nullable(),
+});
+export type OperationLogRow = z.infer<typeof operationLogRowSchema>;
+
 export * from "./statcan-wds-normalization.ts";

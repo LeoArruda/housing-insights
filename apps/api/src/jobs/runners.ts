@@ -20,6 +20,7 @@ import * as statcanCatalogRepo from "../db/repositories/statcan-catalog.ts";
 import * as statcanCursorRepo from "../db/repositories/statcan-cursor.ts";
 import type { Env } from "../env.ts";
 import type { FetchFn } from "../connectors/fetch-types.ts";
+import { appendOperationalLog } from "../logging/operational.ts";
 import { sha256Hex } from "../util/hash.ts";
 
 export const STATCAN_CATALOG_SOURCE = "statcan-catalog-index" as const;
@@ -43,6 +44,12 @@ async function runIngestJob(
   load: () => Promise<{ body: string; contentType: string; sourceKey: string }>,
 ): Promise<void> {
   const runId = jobRunsRepo.insertJobRun(ctx.db, jobName);
+  appendOperationalLog(ctx.db, ctx.env, {
+    source: `job:${jobName}`,
+    level: "info",
+    jobRunId: runId,
+    message: "Job started",
+  });
   try {
     const payload = await load();
     const sha = sha256Hex(payload.body);
@@ -55,9 +62,22 @@ async function runIngestJob(
       jobRunId: runId,
     });
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: `job:${jobName}`,
+      level: "info",
+      jobRunId: runId,
+      message: "Job completed successfully",
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     jobRunsRepo.finishJobRun(ctx.db, runId, "failed", msg);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: `job:${jobName}`,
+      level: "error",
+      jobRunId: runId,
+      message: msg,
+      detail: { stack: e instanceof Error ? e.stack : undefined },
+    });
     throw e;
   }
 }
@@ -87,6 +107,12 @@ const defaultKeywordsPath = join(
 
 export async function jobStatcanCatalogIndex(ctx: JobContext): Promise<void> {
   const runId = jobRunsRepo.insertJobRun(ctx.db, "statcan-catalog-index");
+  appendOperationalLog(ctx.db, ctx.env, {
+    source: "job:statcan-catalog-index",
+    level: "info",
+    jobRunId: runId,
+    message: "Job started",
+  });
   try {
     const kwPath = ctx.env.STATCAN_KEYWORDS_PATH ?? defaultKeywordsPath;
     const buckets = await loadKeywordBuckets(kwPath);
@@ -133,18 +159,35 @@ export async function jobStatcanCatalogIndex(ctx: JobContext): Promise<void> {
     }
 
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
-    console.info(
-      `[statcan-catalog-index] Indexed ${inserted} cubes (min score ${min}, from ${rows.length} rows)`,
-    );
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-catalog-index",
+      level: "info",
+      jobRunId: runId,
+      message: `Indexed ${inserted} cubes (min score ${min}, from ${rows.length} source rows)`,
+      detail: { inserted, minScore: min, sourceRows: rows.length },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     jobRunsRepo.finishJobRun(ctx.db, runId, "failed", msg);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-catalog-index",
+      level: "error",
+      jobRunId: runId,
+      message: msg,
+      detail: { stack: e instanceof Error ? e.stack : undefined },
+    });
     throw e;
   }
 }
 
 export async function jobStatcanWdsMetadata(ctx: JobContext): Promise<void> {
   const runId = jobRunsRepo.insertJobRun(ctx.db, "statcan-wds-metadata");
+  appendOperationalLog(ctx.db, ctx.env, {
+    source: "job:statcan-wds-metadata",
+    level: "info",
+    jobRunId: runId,
+    message: "Job started",
+  });
   try {
     const client = StatCanClient.fromEnv(ctx.env, ctx.fetchImpl);
     const ids = resolveTargetProductIds(ctx.env, ctx.db);
@@ -173,15 +216,35 @@ export async function jobStatcanWdsMetadata(ctx: JobContext): Promise<void> {
     }
 
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-wds-metadata",
+      level: "info",
+      jobRunId: runId,
+      message: "Job completed successfully",
+      detail: { productCount: ids.length },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     jobRunsRepo.finishJobRun(ctx.db, runId, "failed", msg);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-wds-metadata",
+      level: "error",
+      jobRunId: runId,
+      message: msg,
+      detail: { stack: e instanceof Error ? e.stack : undefined },
+    });
     throw e;
   }
 }
 
 export async function jobStatcanWdsData(ctx: JobContext): Promise<void> {
   const runId = jobRunsRepo.insertJobRun(ctx.db, "statcan-wds-data");
+  appendOperationalLog(ctx.db, ctx.env, {
+    source: "job:statcan-wds-data",
+    level: "info",
+    jobRunId: runId,
+    message: "Job started",
+  });
   try {
     const client = StatCanClient.fromEnv(ctx.env, ctx.fetchImpl);
     const delay = ctx.env.STATCAN_REQUEST_DELAY_MS;
@@ -207,15 +270,32 @@ export async function jobStatcanWdsData(ctx: JobContext): Promise<void> {
         });
       }
       jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+      appendOperationalLog(ctx.db, ctx.env, {
+        source: "job:statcan-wds-data",
+        level: "info",
+        jobRunId: runId,
+        message: "Job completed successfully",
+        detail: { mode: "vectors", count: vectors.length },
+      });
       return;
     }
 
     const coord = ctx.env.STATCAN_DEFAULT_DATA_COORDINATE?.trim();
     if (!coord) {
-      console.warn(
-        "[statcan-wds-data] Set STATCAN_DATA_VECTOR_IDS or STATCAN_DEFAULT_DATA_COORDINATE; nothing fetched",
-      );
+      appendOperationalLog(ctx.db, ctx.env, {
+        source: "job:statcan-wds-data",
+        level: "warn",
+        jobRunId: runId,
+        message:
+          "Set STATCAN_DATA_VECTOR_IDS or STATCAN_DEFAULT_DATA_COORDINATE; nothing fetched",
+      });
       jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+      appendOperationalLog(ctx.db, ctx.env, {
+        source: "job:statcan-wds-data",
+        level: "info",
+        jobRunId: runId,
+        message: "Job completed (no data path configured)",
+      });
       return;
     }
 
@@ -245,9 +325,22 @@ export async function jobStatcanWdsData(ctx: JobContext): Promise<void> {
     }
 
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-wds-data",
+      level: "info",
+      jobRunId: runId,
+      message: "Job completed successfully",
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     jobRunsRepo.finishJobRun(ctx.db, runId, "failed", msg);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-wds-data",
+      level: "error",
+      jobRunId: runId,
+      message: msg,
+      detail: { stack: e instanceof Error ? e.stack : undefined },
+    });
     throw e;
   }
 }

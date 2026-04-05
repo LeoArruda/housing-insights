@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { ApiHttpError } from "../../api/client.ts";
@@ -6,6 +7,10 @@ import {
   fetchJobRunById,
   type JobRunRow,
 } from "../../composables/useJobRuns.ts";
+import {
+  fetchOperationalLogsList,
+  type OperationalLogRow,
+} from "../../composables/useOperationalLogs.ts";
 
 const route = useRoute();
 
@@ -18,6 +23,28 @@ const id = computed(() => {
   const raw = route.params.id;
   const n = Number(typeof raw === "string" ? raw : raw?.[0]);
   return Number.isFinite(n) ? n : NaN;
+});
+
+const logsQuery = useQuery({
+  queryKey: computed(() => ["operation-logs", "job", id.value] as const),
+  queryFn: () =>
+    fetchOperationalLogsList({
+      job_run_id: id.value,
+      limit: 100,
+      offset: 0,
+    }),
+  enabled: computed(() => Number.isFinite(id.value)),
+});
+
+const logRows = computed<OperationalLogRow[]>(
+  () => logsQuery.data.value?.data ?? [],
+);
+const logsLoading = computed(() => logsQuery.isPending.value);
+const logsError = computed(() => {
+  if (!logsQuery.isError.value || logsQuery.error.value == null) return null;
+  const e = logsQuery.error.value;
+  if (e instanceof ApiHttpError) return e.message;
+  return e instanceof Error ? e.message : String(e);
 });
 
 const metadataDisplay = computed(() => {
@@ -134,6 +161,42 @@ watch(
         </div>
       </dl>
     </div>
+
+    <div v-if="row && !loading" class="logs-section">
+      <h2 class="h2">Related operational logs</h2>
+      <p v-if="logsError" class="error" role="alert">{{ logsError }}</p>
+      <p v-else-if="logsLoading" class="muted">Loading logs…</p>
+      <div v-else class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Time (UTC)</th>
+              <th>Level</th>
+              <th>Source</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="logRows.length === 0">
+              <td colspan="4" class="muted empty">No log entries for this run.</td>
+            </tr>
+            <tr v-for="lg in logRows" :key="lg.id">
+              <td class="mono">{{ lg.occurred_at }}</td>
+              <td>
+                <span class="pill" :class="`pill--${lg.level}`">{{
+                  lg.level
+                }}</span>
+              </td>
+              <td class="src">{{ lg.source }}</td>
+              <td class="msg">{{ lg.message }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        <RouterLink to="/logs" class="link">Open full log browser</RouterLink>
+      </p>
+    </div>
   </div>
 </template>
 
@@ -248,6 +311,87 @@ watch(
 
 .pill--failed {
   background: color-mix(in srgb, var(--hi-danger) 22%, transparent);
+  color: var(--hi-danger);
+}
+
+.logs-section {
+  margin-top: 1.5rem;
+}
+
+.h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--hi-border);
+  border-radius: 8px;
+  background: var(--hi-card);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table th,
+.table td {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--hi-border);
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--hi-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.src {
+  max-width: 12rem;
+  word-break: break-word;
+}
+
+.msg {
+  word-break: break-word;
+}
+
+.empty {
+  padding: 1rem;
+  text-align: center;
+}
+
+.note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.pill--debug {
+  background: color-mix(in srgb, var(--hi-muted) 35%, transparent);
+}
+
+.pill--info {
+  background: color-mix(in srgb, var(--hi-accent) 20%, transparent);
+  color: var(--hi-accent);
+}
+
+.pill--warn {
+  background: color-mix(in srgb, #eab308 28%, transparent);
+  color: #a16207;
+}
+
+.pill--error {
+  background: color-mix(in srgb, var(--hi-danger) 25%, transparent);
   color: var(--hi-danger);
 }
 </style>

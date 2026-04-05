@@ -35,6 +35,7 @@ Deliver a **Vue 3** operations console for the housing-insights API: **Dashboard
 | `/dashboard` | yes | yes |
 | `/schedules*` | no | yes |
 | `/jobs`, `/jobs/:id` | read-only | yes |
+| `/logs` | read-only | yes |
 | `/data`, `/data/:id` | read-only | yes |
 
 ## User scenarios and testing

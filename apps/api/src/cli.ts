@@ -7,6 +7,10 @@ import {
   JOB_NAMES,
   runJobByName,
 } from "./jobs/registry.ts";
+import {
+  appendOperationalLog,
+  pruneOperationalLogsByRetention,
+} from "./logging/operational.ts";
 import type { JobContext } from "./jobs/runners.ts";
 
 function printHelp(): void {
@@ -17,6 +21,7 @@ Usage:
   bun run src/cli.ts job list
   bun run src/cli.ts job run <name>
   bun run src/cli.ts job run-all
+  bun run src/cli.ts logs prune
 
 Jobs: ${JOB_NAMES.join(", ")}
 `);
@@ -38,6 +43,23 @@ async function main(): Promise<void> {
     console.info("Migrations applied.");
     db.close();
     return;
+  }
+
+  if (cmd === "logs") {
+    const env = loadEnv();
+    const db = openDatabase(env.DATABASE_PATH);
+    runMigrations(db, migrationsDirectory());
+    if (sub === "prune") {
+      const n = pruneOperationalLogsByRetention(db, env);
+      console.info(
+        `Pruned ${n} operational log row(s) older than ${env.OPERATIONS_LOG_RETENTION_DAYS} day(s).`,
+      );
+      db.close();
+      return;
+    }
+    console.error("Usage: bun run src/cli.ts logs prune");
+    db.close();
+    process.exit(1);
   }
 
   if (cmd === "job") {
@@ -64,7 +86,18 @@ async function main(): Promise<void> {
         await runJobByName(ctx, name);
         console.info(`Job ${name} completed.`);
         db.close();
-      } catch {
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`Job ${name} failed:`, e);
+        appendOperationalLog(db, env, {
+          source: "cli",
+          level: "error",
+          message: `Job ${name} failed: ${msg}`,
+          detail: {
+            job: name,
+            stack: e instanceof Error ? e.stack : undefined,
+          },
+        });
         db.close();
         process.exit(1);
       }
@@ -77,9 +110,19 @@ async function main(): Promise<void> {
         try {
           await runJobByName(ctx, name);
           console.info(`Job ${name} completed.`);
-        } catch {
+        } catch (e) {
           failed = true;
-          console.error(`Job ${name} failed.`);
+          const msg = e instanceof Error ? e.message : String(e);
+          console.error(`Job ${name} failed:`, e);
+          appendOperationalLog(db, env, {
+            source: "cli",
+            level: "error",
+            message: `Job ${name} failed: ${msg}`,
+            detail: {
+              job: name,
+              stack: e instanceof Error ? e.stack : undefined,
+            },
+          });
         }
       }
       db.close();

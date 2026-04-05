@@ -28,6 +28,7 @@ Ordered checklist for agents/PRs. Mark `[x]` when done.
 
 ## Features
 
+- [x] **Operational logs (FR-11):** See canonical [operational-logging/tasks.md](../operational-logging/tasks.md) — `/operations/logs` API, `/logs` UI, job detail related logs
 - [x] US-Dashboard: KPI cards + recent failures + schedule health
 - [x] US-Schedules: list + detail
 - [x] US-Schedules: guided create wizard (catalog → cadence → advanced → review)

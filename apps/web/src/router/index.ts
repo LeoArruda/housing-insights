@@ -54,6 +54,11 @@ const router = createRouter({
           component: () => import("../views/jobs/JobDetailView.vue"),
         },
         {
+          path: "logs",
+          name: "logs",
+          component: () => import("../views/logs/LogsListView.vue"),
+        },
+        {
           path: "data",
           name: "data",
           component: () => import("../views/data/RawPayloadsListView.vue"),

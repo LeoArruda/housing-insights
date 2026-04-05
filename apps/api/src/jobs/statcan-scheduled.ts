@@ -7,6 +7,7 @@ import {
   computeNextRunAfter,
   type ScheduleFrequency,
 } from "../services/statcan-next-run.ts";
+import { appendOperationalLog } from "../logging/operational.ts";
 import { sha256Hex } from "../util/hash.ts";
 import type { JobContext } from "./runners.ts";
 
@@ -20,11 +21,23 @@ function sleep(ms: number): Promise<void> {
 
 export async function jobStatcanScheduledIngest(ctx: JobContext): Promise<void> {
   const runId = jobRunsRepo.insertJobRun(ctx.db, "statcan-scheduled-ingest");
+  appendOperationalLog(ctx.db, ctx.env, {
+    source: "job:statcan-scheduled-ingest",
+    level: "info",
+    jobRunId: runId,
+    message: "Job started",
+  });
   const nowIso = new Date().toISOString();
   const due = schedulesRepo.listDueSchedules(ctx.db, nowIso);
 
   if (due.length === 0) {
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-scheduled-ingest",
+      level: "info",
+      jobRunId: runId,
+      message: "No due schedules",
+    });
     return;
   }
 
@@ -39,9 +52,23 @@ export async function jobStatcanScheduledIngest(ctx: JobContext): Promise<void> 
       await processOneSchedule(ctx, client, row, runId, defaultLatestN, defaultCoord);
     }
     jobRunsRepo.finishJobRun(ctx.db, runId, "success", null);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-scheduled-ingest",
+      level: "info",
+      jobRunId: runId,
+      message: `Processed ${due.length} due schedule(s)`,
+      detail: { scheduleCount: due.length },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     jobRunsRepo.finishJobRun(ctx.db, runId, "failed", msg);
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-scheduled-ingest",
+      level: "error",
+      jobRunId: runId,
+      message: msg,
+      detail: { stack: e instanceof Error ? e.stack : undefined },
+    });
     throw e;
   }
 }
@@ -106,9 +133,13 @@ async function processOneSchedule(
             jobRunId,
           });
         } else {
-          console.warn(
-            `[statcan-scheduled-ingest] schedule ${row.id} product ${row.product_id}: fetch_data set but no data_vector_id or coordinate; skipping data`,
-          );
+          appendOperationalLog(ctx.db, ctx.env, {
+            source: "job:statcan-scheduled-ingest",
+            level: "warn",
+            jobRunId,
+            message: `Schedule ${row.id} product ${row.product_id}: fetch_data set but no data_vector_id or coordinate; skipping data`,
+            detail: { scheduleId: row.id, productId: row.product_id },
+          });
         }
       }
     }
@@ -138,9 +169,16 @@ async function processOneSchedule(
       bump.toISOString(),
       msg,
     );
-    console.error(
-      `[statcan-scheduled-ingest] schedule ${row.id} product ${row.product_id}:`,
-      msg,
-    );
+    appendOperationalLog(ctx.db, ctx.env, {
+      source: "job:statcan-scheduled-ingest",
+      level: "error",
+      jobRunId,
+      message: `Schedule ${row.id} product ${row.product_id}: ${msg}`,
+      detail: {
+        scheduleId: row.id,
+        productId: row.product_id,
+        stack: e instanceof Error ? e.stack : undefined,
+      },
+    });
   }
 }

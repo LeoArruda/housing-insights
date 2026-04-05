@@ -21,6 +21,8 @@ const dataActive = computed(
   () => route.name === "data" || route.name === "data-detail",
 );
 
+const logsActive = computed(() => route.name === "logs");
+
 function navItemClass(active: boolean) {
   return active
     ? "menu-item menu-item-active rounded-lg px-3 py-2"
@@ -62,6 +64,12 @@ function navItemClass(active: boolean) {
           :class="navItemClass(jobsActive)"
         >
           Job runs
+        </RouterLink>
+        <RouterLink
+          to="/logs"
+          :class="navItemClass(logsActive)"
+        >
+          Logs
         </RouterLink>
         <RouterLink
           to="/data"

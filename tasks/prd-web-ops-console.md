@@ -169,6 +169,7 @@ Operators and leadership need a **browser-based console** on top of the existing
 - **FR-8:** All JSON error responses from the API must be surfaced to the user in a consistent error component (message + optional details).
 - **FR-9:** UTC must be **labeled** on all schedule time fields (no silent local timezone).
 - **FR-10:** When dashboard keys are set in env, the API must enforce **Bearer** authentication and **viewer vs operator** rules per **Resolved decisions**; schedule mutations and schedule reads must return **403** for viewer tokens.
+- **FR-11:** Operators and viewers must be able to **browse and filter operational logs** (`GET /operations/logs`) and open a dedicated **Logs** route in the SPA; job run detail must surface **related logs** for that run. Canonical spec: [docs/specs/operational-logging/spec.md](../docs/specs/operational-logging/spec.md).
 
 ---
 
@@ -185,7 +186,7 @@ Operators and leadership need a **browser-based console** on top of the existing
 
 ## Design considerations
 
-- **IA:** `/dashboard` (all) · `/schedules`, `/schedules/new`, `/schedules/:id` (**operators only**) · `/jobs`, `/jobs/:id`, `/data`, `/data/:id` (**operators + viewers**, read-only).
+- **IA:** `/dashboard` (all) · `/schedules`, `/schedules/new`, `/schedules/:id` (**operators only**) · `/jobs`, `/jobs/:id`, `/data`, `/data/:id`, `/logs` (**operators + viewers**, read-only).
 - **Visual hierarchy:** failures and `last_error` use clear warning styling.
 - **Vue:** Composition API, TypeScript, align with repo [`.cursor/skills/vue/SKILL.md`](../.cursor/skills/vue/SKILL.md) when implementing.
 

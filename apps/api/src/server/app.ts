@@ -2,13 +2,18 @@ import type { Database } from "bun:sqlite";
 import { Hono } from "hono";
 import { z } from "zod";
 import * as jobRunsRepo from "../db/repositories/job-runs.ts";
+import * as operationLogsRepo from "../db/repositories/operation-logs.ts";
 import * as rawPayloadsRepo from "../db/repositories/raw-payloads.ts";
 import * as statcanCatalogRepo from "../db/repositories/statcan-catalog.ts";
 import * as statcanWdsNormRepo from "../db/repositories/statcan-wds-normalization.ts";
 import * as statcanSchedulesRepo from "../db/repositories/statcan-product-schedules.ts";
 import type { Env } from "../env.ts";
 import { computeNextRunAfter } from "../services/statcan-next-run.ts";
-import { jobStatusSchema } from "@housing-insights/types";
+import {
+  jobStatusSchema,
+  operationLogLevelSchema,
+} from "@housing-insights/types";
+import { appendOperationalLog } from "../logging/operational.ts";
 import { corsAllowOriginMiddleware } from "./cors.ts";
 import { dashboardAuthMiddleware, requireOperator } from "./dashboard-auth.ts";
 
@@ -79,6 +84,20 @@ function scheduleRowToJson(row: statcanSchedulesRepo.StatcanProductScheduleRow) 
 export function createApp(db: Database, env: Env) {
   const app = new Hono();
 
+  app.onError((err, c) => {
+    appendOperationalLog(db, env, {
+      source: "api",
+      level: "error",
+      message: err instanceof Error ? err.message : String(err),
+      detail: {
+        path: c.req.path,
+        method: c.req.method,
+        stack: err instanceof Error ? err.stack : undefined,
+      },
+    });
+    return c.json({ error: "Internal Server Error" }, 500);
+  });
+
   app.get("/health", (c) => c.json({ status: "ok" }));
 
   app.get("/health/ready", (c) => {
@@ -95,7 +114,7 @@ export function createApp(db: Database, env: Env) {
     app.use("*", corsAllowOriginMiddleware(corsOrigin));
   }
 
-  app.use("*", dashboardAuthMiddleware(env));
+  app.use("*", dashboardAuthMiddleware(env, { db }));
 
   app.get("/job-runs", (c) => {
     const q = c.req.query();
@@ -111,6 +130,34 @@ export function createApp(db: Database, env: Env) {
       job_name: job_name ?? undefined,
       status: statusParse.data,
       limit: limit.success ? limit.data : 50,
+    });
+    return c.json({ data: rows });
+  });
+
+  app.get("/operations/logs", (c) => {
+    const q = c.req.query();
+    const from = q.from?.trim() || undefined;
+    const to = q.to?.trim() || undefined;
+    const source = q.source?.trim() || undefined;
+    const qStr = q.q?.trim() || undefined;
+    const jobRunParse = z.coerce.number().int().positive().safeParse(q.job_run_id);
+    const levelParse = q.level
+      ? operationLogLevelSchema.safeParse(q.level)
+      : { success: true as const, data: undefined };
+    if (!levelParse.success) {
+      return c.json({ error: "Invalid level" }, 400);
+    }
+    const limitParse = z.coerce.number().min(1).max(500).safeParse(q.limit);
+    const offsetParse = z.coerce.number().min(0).safeParse(q.offset);
+    const rows = operationLogsRepo.listOperationLogs(db, {
+      from,
+      to,
+      level: levelParse.data,
+      source,
+      jobRunId: jobRunParse.success ? jobRunParse.data : undefined,
+      q: qStr,
+      limit: limitParse.success ? limitParse.data : 50,
+      offset: offsetParse.success ? offsetParse.data : 0,
     });
     return c.json({ data: rows });
   });
@@ -164,7 +211,7 @@ export function createApp(db: Database, env: Env) {
   });
 
   const statcanCatalog = new Hono();
-  statcanCatalog.use(requireOperator());
+  statcanCatalog.use(requireOperator({ db, env }));
   statcanCatalog.get("/", (c) => {
     const q = c.req.query("q");
     const limitParse = z.coerce
@@ -184,7 +231,7 @@ export function createApp(db: Database, env: Env) {
   app.route("/statcan/catalog", statcanCatalog);
 
   const statcanSchedules = new Hono();
-  statcanSchedules.use(requireOperator());
+  statcanSchedules.use(requireOperator({ db, env }));
   statcanSchedules.get("/", (c) => {
     const rows = statcanSchedulesRepo.listAllSchedules(db);
     return c.json({ data: rows.map(scheduleRowToJson) });

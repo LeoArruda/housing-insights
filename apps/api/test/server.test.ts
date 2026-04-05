@@ -2,7 +2,6 @@ import { afterAll, describe, expect, it } from "bun:test";
 import { unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { openDatabase } from "../src/db/database.ts";
 import { migrationsDirectory, runMigrations } from "../src/db/migrate.ts";
 import * as normRepo from "../src/db/repositories/statcan-wds-normalization.ts";
@@ -96,6 +95,44 @@ describe("read API", () => {
     expect(json.recent_failed_runs.length).toBeGreaterThanOrEqual(1);
     expect(json.schedules.total).toBeGreaterThanOrEqual(1);
     expect(json.schedules.enabled).toBeGreaterThanOrEqual(0);
+    db.close();
+  });
+
+  it("GET /operations/logs filters by job_run_id and q", async () => {
+    const env = baseEnv();
+    const db = openDatabase(env.DATABASE_PATH);
+    runMigrations(db, migrationsDirectory());
+    db.run(
+      `INSERT INTO job_runs (job_name, started_at, finished_at, status, error_message) VALUES (?, ?, ?, ?, ?)`,
+      ["statcan-rss", new Date().toISOString(), new Date().toISOString(), "success", null],
+    );
+    const jrId = Number(
+      (db.query(`SELECT id FROM job_runs ORDER BY id DESC LIMIT 1`).get() as { id: number })
+        .id,
+    );
+    const t = new Date().toISOString();
+    db.run(
+      `INSERT INTO operation_logs (occurred_at, level, source, job_run_id, message, detail, correlation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [t, "info", "job:statcan-rss", jrId, "Job completed successfully", null, null],
+    );
+    db.run(
+      `INSERT INTO operation_logs (occurred_at, level, source, job_run_id, message, detail, correlation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [t, "warn", "cli", null, "other message", null, null],
+    );
+    const app = createApp(db, env);
+    const byJob = await app.request(`/operations/logs?job_run_id=${jrId}`);
+    expect(byJob.status).toBe(200);
+    const j1 = (await byJob.json()) as { data: { message: string }[] };
+    expect(j1.data.length).toBe(1);
+    expect(j1.data[0].message).toContain("completed");
+
+    const qsearch = await app.request("/operations/logs?q=completed&limit=10");
+    expect(qsearch.status).toBe(200);
+    const j2 = (await qsearch.json()) as { data: unknown[] };
+    expect(j2.data.length).toBeGreaterThanOrEqual(1);
+
     db.close();
   });
 

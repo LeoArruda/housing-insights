@@ -11,7 +11,7 @@ See also [docs/specs/platform-foundation/spec.md](specs/platform-foundation/spec
 | Piece | Role |
 |-------|------|
 | `apps/api` | Runnable Bun package: HTTP server, CLI, daemon |
-| `apps/web` | Vue 3 + Vite **operations console**: dashboard, StatCan schedules (operators), job runs and raw payloads (operators + viewers) |
+| `apps/web` | Vue 3 + Vite **operations console**: dashboard, StatCan schedules (operators), job runs, **operational logs**, raw payloads (operators + viewers) |
 | `packages/types` | Shared Zod schemas and types (e.g. job status) |
 
 Source lives under `apps/api/src/`:
