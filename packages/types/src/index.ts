@@ -25,3 +25,5 @@ export const rawPayloadRowSchema = z.object({
   job_run_id: z.number().int().nullable(),
 });
 export type RawPayloadRow = z.infer<typeof rawPayloadRowSchema>;
+
+export * from "./statcan-wds-normalization.ts";

@@ -11,8 +11,8 @@
 
 ## Phase 1 — Schema and types
 
-- [ ] SQLite migration(s): normalized + curated tables, indexes, FK to `raw_payloads`
-- [ ] Zod/types in `packages/types` for normalized DTOs (and API if exposed)
+- [x] SQLite migration(s): `005_statcan_wds_normalization.sql` — `statcan_wds_data_batch`, `statcan_wds_data_observation`, `statcan_wds_normalize_error`, FKs to `raw_payloads`
+- [x] Zod/types in `packages/types` (`statcan-wds-normalization.ts`): WDS envelope + SUCCESS object + SQLite row shapes; fixture test `apps/api/test/statcan-wds-normalization-schema.test.ts`
 
 ## Phase 2 — Normalization
 

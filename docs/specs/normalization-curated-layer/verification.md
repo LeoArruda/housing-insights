@@ -20,3 +20,11 @@ Append a row or subsection per verification run after material changes.
 | [tasks.md](./tasks.md) Phase 0 items completed | Pass |
 
 No code or migrations in this phase; Phase 1+ will add migration files and implementation.
+
+### 2026-04-03 — Phase 1 (schema + types)
+
+| Check | Result |
+|--------|--------|
+| Migration `005_statcan_wds_normalization.sql` applies; `migrate.test.ts` asserts new tables + version | Pass |
+| `packages/types` WDS + row Zod schemas; `statcan-wds-normalization-schema.test.ts` | Pass |
+| `bun test` (repo root) | Pass |

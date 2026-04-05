@@ -35,6 +35,9 @@ describe("runMigrations", () => {
     expect(names).toContain("statcan_cube_catalog");
     expect(names).toContain("statcan_ingest_cursor");
     expect(names).toContain("statcan_product_schedules");
+    expect(names).toContain("statcan_wds_data_batch");
+    expect(names).toContain("statcan_wds_data_observation");
+    expect(names).toContain("statcan_wds_normalize_error");
 
     runMigrations(db, migrationsDirectory());
     const versions = db
@@ -48,6 +51,9 @@ describe("runMigrations", () => {
       1,
     );
     expect(versions.filter((v) => v.version === "004_statcan_pilot_schedules_weekly").length).toBe(
+      1,
+    );
+    expect(versions.filter((v) => v.version === "005_statcan_wds_normalization").length).toBe(
       1,
     );
 
