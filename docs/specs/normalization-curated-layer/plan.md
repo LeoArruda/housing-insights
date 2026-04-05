@@ -27,16 +27,16 @@ flowchart TB
 
 - **Normalize**: pure-ish functions: `(raw_payload row) → validated DTO` then repository upsert.
 - **Repositories**: new files under `apps/api/src/db/repositories/` (or `apps/api/src/normalization/` + repos) — follow existing patterns.
-- **Jobs**: one named job (e.g. `statcan-wds-normalize`) or hook from existing runner — **decide in Phase 0** and record in spec open questions.
+- **Jobs**: **`statcan-wds-data-normalize`** — separate from ingest; see [spec.md](./spec.md) **Resolved decisions (Phase 0)**.
 
 ## Phases
 
-### Phase 0 — Design lock (no migrations yet)
+### Phase 0 — Design lock (complete)
 
-- Enumerate **in-scope** `raw_payloads.source` values and reference fixtures from `apps/api/test/`.
-- Answer spec **open questions** (trigger model, error persistence).
-- **Architect** updates [docs/architecture.md](../../architecture.md) with target-state data flow paragraph + link to [docs/data-model.md](../../data-model.md).
-- Add **docs/data-model.md** (new) with MVP table list, PKs, FK to `raw_payloads`, and column semantics.
+- In-scope source: **`statcan-wds-data`** only for slice 1; fixtures under `apps/api/test/fixtures/wds-vector-data-response.json` (metadata deferred).
+- Trigger: **separate normalize job**; optional `DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON`.
+- Errors: **`statcan_wds_normalize_error`** table (append-only).
+- Docs: [docs/data-model.md](../../data-model.md) updated with MVP tables; [docs/architecture.md](../../architecture.md) linked from spec folder.
 
 ### Phase 1 — Schema
 

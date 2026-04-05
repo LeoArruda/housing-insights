@@ -4,9 +4,9 @@
 
 ## Phase 0 — Design
 
-- [ ] Lock in-scope `raw_payloads.source` values and JSON samples (reference or add fixtures)
-- [ ] Resolve trigger model: inline vs separate job (document in spec/plan)
-- [x] Add [docs/data-model.md](../../data-model.md) skeleton (existing tables); **extend** with MVP normalized/curated columns after design lock
+- [x] Lock in-scope `raw_payloads.source` values and JSON samples (reference or add fixtures) — **`statcan-wds-data`** + [wds-vector-data-response.json](../../../apps/api/test/fixtures/wds-vector-data-response.json); metadata deferred
+- [x] Resolve trigger model: **separate job** `statcan-wds-data-normalize` (documented in spec/plan); optional daemon cron env
+- [x] Add [docs/data-model.md](../../data-model.md) skeleton (existing tables); **extend** with MVP tables + lineage (`statcan_wds_data_batch`, `statcan_wds_data_observation`, `statcan_wds_normalize_error`)
 - [x] Update [docs/architecture.md](../../architecture.md) data flow (link to this spec + data-model)
 
 ## Phase 1 — Schema and types

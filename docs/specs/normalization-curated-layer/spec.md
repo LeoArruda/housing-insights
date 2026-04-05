@@ -1,7 +1,7 @@
 # Feature specification: Normalization and curated layer (MVP)
 
 **Feature**: `normalization-curated-layer`  
-**Status**: Draft  
+**Status**: Phase 0 locked (implementation: Phase 1+)  
 **Date**: 2026-04-03  
 **Depends on**: [platform-foundation](../platform-foundation/spec.md), [statcan-wds-automation](../statcan-wds-automation/spec.md) (raw capture + schedules in place)
 
@@ -15,7 +15,7 @@ Today the platform **stops at raw** ([docs/architecture.md](../../architecture.m
 
 ## Goals (MVP)
 
-- **G1**: For a **defined subset** of StatCan raw sources (e.g. `statcan-wds-data` / `statcan-wds-metadata` payloads, to be enumerated in `plan.md`), produce **normalized rows** in SQLite with **stable natural keys** and **FK lineage** to `raw_payloads.id` (and optionally `job_run_id`).
+- **G1**: For **`statcan-wds-data` only** in MVP slice 1 (see **Resolved decisions**), produce **normalized + observation rows** in SQLite with **stable keys** and **FK lineage** to `raw_payloads.id`. `statcan-wds-metadata` normalization is **deferred** to a follow-up slice in the same epic.
 - **G2**: Expose at least one **curated** (analytics-oriented) table or view that operators can reason about (e.g. time-series friendly: `ref_date`, `product_id`, `value`, `vector_id` — exact shape in plan/data model).
 - **G3**: Pipeline is **idempotent**: re-processing the same raw payload does not duplicate business rows (upsert or equivalent).
 - **G4**: **Tests** use fixtures only (no live HTTP); cover happy path + invalid payload rejection.
@@ -58,7 +58,7 @@ Today the platform **stops at raw** ([docs/architecture.md](../../architecture.m
 
 - **FR-N1**: Zod (or equivalent) schemas at the **normalization boundary**; shared types in `packages/types` where the API and jobs both need them.
 - **FR-N2**: Forward-only SQL migrations; no destructive migration of raw tables.
-- **FR-N3**: Normalization entrypoint callable from a **job runner** (CLI/daemon) so it can run on a schedule or after ingest (exact trigger in `plan.md`).
+- **FR-N3**: Normalization entrypoint as registered job **`statcan-wds-data-normalize`** (CLI/daemon); optional cron env documented in `plan.md`.
 - **FR-N4**: Documentation: update [docs/architecture.md](../../architecture.md) data flow and add or extend **`docs/data-model.md`** with table definitions and lineage diagram.
 
 ## Dependencies
@@ -66,11 +66,36 @@ Today the platform **stops at raw** ([docs/architecture.md](../../architecture.m
 - Existing `raw_payloads`, `job_runs`, StatCan WDS jobs and payloads.
 - `apps/api` job registry pattern and repositories.
 
-## Open questions (resolve in plan)
+## Resolved decisions (Phase 0)
 
-- Trigger model: **synchronous** (inside existing WDS job after raw write) vs **async** (separate `normalize-statcan-wds` job polling new raws).
-- Which **exact** `source` values and JSON shapes are in scope for v1.
-- Whether to store **normalization errors** in a dedicated table vs job log only.
+### In-scope `raw_payloads.source` (MVP slice 1)
+
+| Source | `source_key` patterns (examples) | Fixture / sample body |
+|--------|----------------------------------|------------------------|
+| **`statcan-wds-data`** | `data:vector:{id}`, `data:cube:{productId}:{coord}`, `schedule:{id}:data:vector:{id}`, `schedule:{id}:data:cube:{pid}:{coord}` | [apps/api/test/fixtures/wds-vector-data-response.json](../../../apps/api/test/fixtures/wds-vector-data-response.json) |
+
+Canonical job constants: `STATCAN_WDS_DATA_SOURCE` in `apps/api/src/jobs/runners.ts` and `statcan-scheduled.ts` (`statcan-wds-data`).
+
+**JSON envelope (WDS “getData*” responses):** top-level **array** of elements `{ "status": string, "object": { ... } }`. MVP parser processes elements with `status === "SUCCESS"` and `object.vectorDataPoint` present. Shape matches the fixture: `object.productId`, `object.vectorId`, `object.coordinate` (optional), `object.vectorDataPoint[]` with `refPer`, `value`, `decimals`.
+
+**Out of scope for slice 1:** `statcan-wds-metadata` bodies (different envelope — see [wds-metadata-response.json](../../../apps/api/test/fixtures/wds-metadata-response.json)); other `raw_payloads.source` values (RSS, BoC, catalog index JSON).
+
+### Trigger model
+
+**Separate job** `statcan-wds-data-normalize` (name exact in registry):
+
+- After raw rows exist, the normalize job selects candidate `raw_payloads` rows (`source = 'statcan-wds-data'`) that are **not yet** linked to a successful normalization batch (implementation: FK / “processed” flag — see [data-model.md](../../data-model.md)).
+- **Rationale:** Keeps ingest jobs fast and idempotent; retries and backfills are explicit; tests can seed `raw_payloads` and run normalize in isolation.
+
+Optional **daemon cron** env (e.g. `DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON`) — empty / unset means **CLI-only** for MVP unless ops enable it.
+
+### Normalization errors
+
+**Dedicated table** `statcan_wds_normalize_error`: append-only rows for failed parses or rejected payloads (`raw_payload_id`, `message`, `created_at`). Prevents silent drops and supports US-N2 without overloading `job_runs`. Successful re-run after a fix may insert a new batch row; errors remain for audit (or add `resolved_at` in a later migration).
+
+### Physical model (MVP slice 1)
+
+Two tables: **batch** (one row per successfully parsed raw payload) + **observation** (one row per `vectorDataPoint` entry). Details in [docs/data-model.md](../../data-model.md).
 
 ## Related
 
