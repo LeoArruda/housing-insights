@@ -8,6 +8,7 @@ import {
   jobStatcanWdsMetadata,
 } from "./runners.ts";
 import { jobStatcanScheduledIngest } from "./statcan-scheduled.ts";
+import { jobStatcanSubjectChangedIngest } from "./statcan-subject-changed.ts";
 import { jobStatcanWdsDataNormalize } from "./statcan-wds-normalize.ts";
 
 export const JOB_NAMES = [
@@ -17,6 +18,7 @@ export const JOB_NAMES = [
   "statcan-wds-metadata",
   "statcan-wds-data",
   "statcan-scheduled-ingest",
+  "statcan-subject-changed-ingest",
   "boc-valet",
   "statcan-wds-data-normalize",
 ] as const;
@@ -33,6 +35,7 @@ export const jobRegistry: Record<
   "statcan-wds-metadata": jobStatcanWdsMetadata,
   "statcan-wds-data": jobStatcanWdsData,
   "statcan-scheduled-ingest": jobStatcanScheduledIngest,
+  "statcan-subject-changed-ingest": jobStatcanSubjectChangedIngest,
   "boc-valet": jobBocValet,
   "statcan-wds-data-normalize": jobStatcanWdsDataNormalize,
 };

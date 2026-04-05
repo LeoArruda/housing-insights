@@ -32,3 +32,7 @@ Automate Statistics Canada [Web Data Service (WDS) REST](https://www.statcan.gc.
 
 - `bun test` passes without live StatCan calls (fixtures only).
 - CLI can run `statcan-catalog-index`, `statcan-wds-metadata`, `statcan-wds-data`, and `statcan-scheduled-ingest` with documented env.
+
+## Related
+
+- Follow-on UX and ingest-mode work: [statcan-wds-operator-ux](../statcan-wds-operator-ux/spec.md).

@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import type { FetchFn } from "../fetch-types.ts";
 import { createHttpGet } from "../http-client.ts";
 import type { Env } from "../../env.ts";
@@ -120,6 +121,120 @@ export class StatCanClient {
     const parsed: unknown = JSON.parse(text);
     getDataResponseSchema.parse(parsed);
     return parsed;
+  }
+
+  private async postJsonLoose(url: string, body: string): Promise<unknown> {
+    const res = await this.fetchImpl(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": this.userAgent,
+      },
+      body,
+    });
+    if (!res.ok) {
+      throw new Error(`WDS POST: HTTP ${res.status} ${res.statusText}`);
+    }
+    const text = await res.text();
+    return JSON.parse(text) as unknown;
+  }
+
+  private async getJsonLoose(url: string): Promise<unknown> {
+    const res = await this.fetchImpl(url, {
+      method: "GET",
+      headers: { "User-Agent": this.userAgent },
+    });
+    if (!res.ok) {
+      throw new Error(`WDS GET: HTTP ${res.status} ${res.statusText}`);
+    }
+    const text = await res.text();
+    return JSON.parse(text) as unknown;
+  }
+
+  /** GET — series that changed “today” (per WDS guide). */
+  async getChangedSeriesList(): Promise<unknown> {
+    return this.getJsonLoose(wdsPaths.getChangedSeriesList);
+  }
+
+  /** GET — cubes changed on a calendar day (YYYY-MM-DD). */
+  async getChangedCubeList(isoDate: string): Promise<unknown> {
+    return this.getJsonLoose(wdsPaths.getChangedCubeList(isoDate));
+  }
+
+  async getSeriesInfoFromCubePidCoord(
+    productId: number,
+    coordinate: string,
+  ): Promise<unknown> {
+    const body = JSON.stringify([{ productId, coordinate }]);
+    return this.postJsonLoose(wdsPaths.getSeriesInfoFromCubePidCoord, body);
+  }
+
+  async getSeriesInfoFromVector(vectorId: number): Promise<unknown> {
+    const body = JSON.stringify([{ vectorId }]);
+    return this.postJsonLoose(wdsPaths.getSeriesInfoFromVector, body);
+  }
+
+  async getChangedSeriesDataFromCubePidCoord(
+    productId: number,
+    coordinate: string,
+  ): Promise<unknown> {
+    const body = JSON.stringify([{ productId, coordinate }]);
+    return this.postJsonLoose(
+      wdsPaths.getChangedSeriesDataFromCubePidCoord,
+      body,
+    );
+  }
+
+  async getChangedSeriesDataFromVector(vectorId: number): Promise<unknown> {
+    const body = JSON.stringify([{ vectorId }]);
+    return this.postJsonLoose(wdsPaths.getChangedSeriesDataFromVector, body);
+  }
+
+  async getBulkVectorDataByRange(
+    vectorIds: string[],
+    startDataPointReleaseDate: string,
+    endDataPointReleaseDate: string,
+  ): Promise<unknown> {
+    const body = JSON.stringify({
+      vectorIds,
+      startDataPointReleaseDate,
+      endDataPointReleaseDate,
+    });
+    return this.postJsonLoose(wdsPaths.getBulkVectorDataByRange, body);
+  }
+
+  /** GET — CSV text (not JSON). */
+  async getFullTableDownloadCSV(
+    productId: number,
+    lang: "en" | "fr",
+  ): Promise<string> {
+    const url = wdsPaths.getFullTableDownloadCSV(productId, lang);
+    const res = await this.fetchImpl(url, {
+      method: "GET",
+      headers: { "User-Agent": this.userAgent },
+    });
+    if (!res.ok) {
+      throw new Error(
+        `getFullTableDownloadCSV: HTTP ${res.status} ${res.statusText}`,
+      );
+    }
+    return res.text();
+  }
+
+  /** GET — SDMX package (often zip); returned as base64 for storage in `raw_payloads.body`. */
+  async getFullTableDownloadSDMXBase64(productId: number): Promise<string> {
+    const url = wdsPaths.getFullTableDownloadSDMX(productId);
+    const res = await this.fetchImpl(url, {
+      method: "GET",
+      headers: { "User-Agent": this.userAgent },
+    });
+    if (!res.ok) {
+      throw new Error(
+        `getFullTableDownloadSDMX: HTTP ${res.status} ${res.statusText}`,
+      );
+    }
+    const buf = new Uint8Array(await res.arrayBuffer());
+    return Buffer.from(buf).toString("base64");
   }
 
 }

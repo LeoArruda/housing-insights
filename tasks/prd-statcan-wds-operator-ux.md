@@ -1,6 +1,6 @@
 # PRD: StatCan WDS operator-friendly series selection and ingestion modes
 
-> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../AGENTS.md)), once engineering breaks work into `docs/specs/<feature>/`, **`tasks.md` there is canonical** for implementation status. This PRD remains the stakeholder contract; **keep story/FR checkboxes aligned** with that `tasks.md` when the spec folder exists. Initial epic name (suggested): `statcan-wds-operator-ux` or an extension of [statcan-wds-automation](../docs/specs/statcan-wds-automation/).
+> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../AGENTS.md)), **`docs/specs/statcan-wds-operator-ux/tasks.md` is canonical** for implementation status. This PRD remains the stakeholder contract; **keep story/FR checkboxes aligned** with that `tasks.md`. Technical detail: [spec.md](../docs/specs/statcan-wds-operator-ux/spec.md), [plan.md](../docs/specs/statcan-wds-operator-ux/plan.md). Builds on [statcan-wds-automation](../docs/specs/statcan-wds-automation/).
 
 ## Introduction / overview
 

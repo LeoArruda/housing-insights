@@ -6,8 +6,11 @@ import * as operationLogsRepo from "../db/repositories/operation-logs.ts";
 import * as rawPayloadsRepo from "../db/repositories/raw-payloads.ts";
 import * as statcanCatalogRepo from "../db/repositories/statcan-catalog.ts";
 import * as statcanWdsNormRepo from "../db/repositories/statcan-wds-normalization.ts";
+import { StatCanClient } from "../connectors/statcan/statcan-client.ts";
 import * as statcanSchedulesRepo from "../db/repositories/statcan-product-schedules.ts";
+import * as statcanSubscriptionsRepo from "../db/repositories/statcan-subject-subscriptions.ts";
 import type { Env } from "../env.ts";
+import { sha256Hex } from "../util/hash.ts";
 import { computeNextRunAfter } from "../services/statcan-next-run.ts";
 import {
   jobStatusSchema,
@@ -19,6 +22,15 @@ import { dashboardAuthMiddleware, requireOperator } from "./dashboard-auth.ts";
 
 const scheduleFrequencySchema = z.enum(["daily", "weekly", "monthly"]);
 
+const statcanIngestModeSchema = z.enum([
+  "latest_n",
+  "changed_series",
+  "changed_cube",
+  "bulk_range",
+  "full_table_csv",
+  "full_table_sdmx",
+]);
+
 const scheduleFieldsSchema = z.object({
   product_id: z.number().int().positive(),
   frequency: scheduleFrequencySchema,
@@ -29,6 +41,9 @@ const scheduleFieldsSchema = z.object({
   latest_n: z.number().int().min(1).max(200).nullable().optional(),
   data_coordinate: z.string().nullable().optional(),
   data_vector_id: z.number().int().positive().nullable().optional(),
+  ingest_mode: statcanIngestModeSchema.default("latest_n"),
+  bulk_release_start: z.string().nullable().optional(),
+  bulk_release_end: z.string().nullable().optional(),
   fetch_metadata: z.boolean().default(true),
   fetch_data: z.boolean().default(true),
   enabled: z.boolean().default(true),
@@ -58,7 +73,9 @@ const patchScheduleBodySchema = scheduleFieldsSchema
   .partial()
   .omit({ product_id: true });
 
-function scheduleRowToJson(row: statcanSchedulesRepo.StatcanProductScheduleRow) {
+function scheduleRowToJson(
+  row: statcanSchedulesRepo.StatcanProductScheduleWithCatalogRow,
+) {
   return {
     id: row.id,
     product_id: row.product_id,
@@ -70,6 +87,9 @@ function scheduleRowToJson(row: statcanSchedulesRepo.StatcanProductScheduleRow) 
     latest_n: row.latest_n,
     data_coordinate: row.data_coordinate,
     data_vector_id: row.data_vector_id,
+    ingest_mode: row.ingest_mode ?? "latest_n",
+    bulk_release_start: row.bulk_release_start,
+    bulk_release_end: row.bulk_release_end,
     fetch_metadata: row.fetch_metadata === 1,
     fetch_data: row.fetch_data === 1,
     enabled: row.enabled === 1,
@@ -78,6 +98,8 @@ function scheduleRowToJson(row: statcanSchedulesRepo.StatcanProductScheduleRow) 
     last_error: row.last_error,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    cube_title_en: row.cube_title_en ?? null,
+    cube_title_fr: row.cube_title_fr ?? null,
   };
 }
 
@@ -233,7 +255,7 @@ export function createApp(db: Database, env: Env) {
   const statcanSchedules = new Hono();
   statcanSchedules.use(requireOperator({ db, env }));
   statcanSchedules.get("/", (c) => {
-    const rows = statcanSchedulesRepo.listAllSchedules(db);
+    const rows = statcanSchedulesRepo.listAllSchedulesWithCatalog(db);
     return c.json({ data: rows.map(scheduleRowToJson) });
   });
 
@@ -283,12 +305,15 @@ export function createApp(db: Database, env: Env) {
       latest_n: body.latest_n ?? null,
       data_coordinate: body.data_coordinate ?? null,
       data_vector_id: body.data_vector_id ?? null,
+      ingest_mode: body.ingest_mode,
+      bulk_release_start: body.bulk_release_start ?? null,
+      bulk_release_end: body.bulk_release_end ?? null,
       fetch_metadata: body.fetch_metadata,
       fetch_data: body.fetch_data,
       enabled: body.enabled,
       next_run_at,
     });
-    const row = statcanSchedulesRepo.getScheduleById(db, id);
+    const row = statcanSchedulesRepo.getScheduleByIdWithCatalog(db, id);
     return c.json(scheduleRowToJson(row!), 201);
   });
 
@@ -330,7 +355,7 @@ export function createApp(db: Database, env: Env) {
       );
     }
     statcanSchedulesRepo.updateSchedule(db, id, p);
-    const row = statcanSchedulesRepo.getScheduleById(db, id);
+    const row = statcanSchedulesRepo.getScheduleByIdWithCatalog(db, id);
     return c.json(scheduleRowToJson(row!));
   });
 
@@ -347,6 +372,249 @@ export function createApp(db: Database, env: Env) {
   });
 
   app.route("/statcan/schedules", statcanSchedules);
+
+  const statcanIngestTools = new Hono();
+  statcanIngestTools.use(requireOperator({ db, env }));
+  const cubeMetaBodySchema = z.object({
+    product_id: z.number().int().positive(),
+  });
+  const seriesInfoBodySchema = z
+    .object({
+      product_id: z.number().int().positive(),
+      coordinate: z.string().min(1).optional(),
+      vector_id: z.number().int().positive().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (!data.coordinate && data.vector_id == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Provide coordinate or vector_id",
+          path: ["coordinate"],
+        });
+      }
+    });
+  const fullTableBodySchema = z.object({
+    product_id: z.number().int().positive(),
+    format: z.enum(["csv", "sdmx"]),
+    lang: z.enum(["en", "fr"]).optional(),
+  });
+
+  statcanIngestTools.post("/cube-metadata", async (c) => {
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = cubeMetaBodySchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    if (
+      statcanCatalogRepo.countCatalogRows(db) > 0 &&
+      !statcanCatalogRepo.catalogHasProduct(db, parsed.data.product_id)
+    ) {
+      return c.json(
+        { error: "product_id not found in statcan_cube_catalog" },
+        400,
+      );
+    }
+    const client = StatCanClient.fromEnv(env);
+    const data = await client.getCubeMetadata(parsed.data.product_id);
+    return c.json({ data });
+  });
+
+  statcanIngestTools.post("/series-info", async (c) => {
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = seriesInfoBodySchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    const { product_id, coordinate, vector_id } = parsed.data;
+    if (
+      statcanCatalogRepo.countCatalogRows(db) > 0 &&
+      !statcanCatalogRepo.catalogHasProduct(db, product_id)
+    ) {
+      return c.json(
+        { error: "product_id not found in statcan_cube_catalog" },
+        400,
+      );
+    }
+    const client = StatCanClient.fromEnv(env);
+    const data =
+      vector_id != null
+        ? await client.getSeriesInfoFromVector(vector_id)
+        : await client.getSeriesInfoFromCubePidCoord(
+            product_id,
+            coordinate!,
+          );
+    return c.json({ data });
+  });
+
+  statcanIngestTools.post("/full-table", async (c) => {
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = fullTableBodySchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    const { product_id, format } = parsed.data;
+    const lang = parsed.data.lang ?? "en";
+    if (
+      statcanCatalogRepo.countCatalogRows(db) > 0 &&
+      !statcanCatalogRepo.catalogHasProduct(db, product_id)
+    ) {
+      return c.json(
+        { error: "product_id not found in statcan_cube_catalog" },
+        400,
+      );
+    }
+    const client = StatCanClient.fromEnv(env);
+    if (format === "csv") {
+      const csv = await client.getFullTableDownloadCSV(product_id, lang);
+      const sha = sha256Hex(csv);
+      rawPayloadsRepo.insertRawPayload(db, {
+        source: "statcan-wds-full-table",
+        sourceKey: `api:full-table-csv:${product_id}:${lang}`,
+        contentType: "text/csv",
+        body: csv,
+        sha256: sha,
+        jobRunId: null,
+      });
+      return c.json({ ok: true, sha256: sha, format: "csv" });
+    }
+    const b64 = await client.getFullTableDownloadSDMXBase64(product_id);
+    const sha = sha256Hex(b64);
+    rawPayloadsRepo.insertRawPayload(db, {
+      source: "statcan-wds-full-table",
+      sourceKey: `api:full-table-sdmx:${product_id}`,
+      contentType: "application/octet-stream",
+      body: b64,
+      sha256: sha,
+      jobRunId: null,
+    });
+    return c.json({ ok: true, sha256: sha, format: "sdmx" });
+  });
+
+  app.route("/statcan/ingest", statcanIngestTools);
+
+  const statcanSubscriptions = new Hono();
+  statcanSubscriptions.use(requireOperator({ db, env }));
+  const subscriptionCreateSchema = z.object({
+    subject_code: z.string().min(1).max(64),
+    label: z.string().max(200).nullable().optional(),
+    enabled: z.boolean().optional(),
+  });
+  const subscriptionPatchSchema = z.object({
+    label: z.string().max(200).nullable().optional(),
+    enabled: z.boolean().optional(),
+  });
+
+  statcanSubscriptions.get("/", (c) => {
+    const rows = statcanSubscriptionsRepo.listAllSubscriptions(db);
+    return c.json({
+      data: rows.map((r) => ({
+        id: r.id,
+        subject_code: r.subject_code,
+        label: r.label,
+        enabled: r.enabled === 1,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+      })),
+    });
+  });
+
+  statcanSubscriptions.post("/", async (c) => {
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = subscriptionCreateSchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    if (
+      statcanSubscriptionsRepo.getSubscriptionBySubjectCode(
+        db,
+        parsed.data.subject_code,
+      )
+    ) {
+      return c.json({ error: "subject_code already exists" }, 409);
+    }
+    const id = statcanSubscriptionsRepo.insertSubscription(db, {
+      subject_code: parsed.data.subject_code,
+      label: parsed.data.label ?? null,
+      enabled: parsed.data.enabled ?? true,
+    });
+    const row = statcanSubscriptionsRepo.getSubscriptionById(db, id)!;
+    return c.json(
+      {
+        id: row.id,
+        subject_code: row.subject_code,
+        label: row.label,
+        enabled: row.enabled === 1,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      },
+      201,
+    );
+  });
+
+  statcanSubscriptions.patch("/:id", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+    const existing = statcanSubscriptionsRepo.getSubscriptionById(db, id);
+    if (!existing) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = subscriptionPatchSchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    statcanSubscriptionsRepo.updateSubscription(db, id, parsed.data);
+    const row = statcanSubscriptionsRepo.getSubscriptionById(db, id)!;
+    return c.json({
+      id: row.id,
+      subject_code: row.subject_code,
+      label: row.label,
+      enabled: row.enabled === 1,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    });
+  });
+
+  statcanSubscriptions.delete("/:id", (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+    const ok = statcanSubscriptionsRepo.deleteSubscription(db, id);
+    if (!ok) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    return c.body(null, 204);
+  });
+
+  app.route("/statcan/subject-subscriptions", statcanSubscriptions);
 
   app.get("/statcan/wds/observations", (c) => {
     const q = c.req.query();

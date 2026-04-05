@@ -2,9 +2,20 @@ import { apiFetch } from "./client.ts";
 
 export type ScheduleFrequency = "daily" | "weekly" | "monthly";
 
+export type StatcanIngestMode =
+  | "latest_n"
+  | "changed_series"
+  | "changed_cube"
+  | "bulk_range"
+  | "full_table_csv"
+  | "full_table_sdmx";
+
 export type StatcanSchedule = {
   id: number;
   product_id: number;
+  /** From `statcan_cube_catalog` when the product is indexed; null if unknown. */
+  cube_title_en: string | null;
+  cube_title_fr: string | null;
   frequency: ScheduleFrequency;
   hour_utc: number;
   minute_utc: number;
@@ -13,6 +24,9 @@ export type StatcanSchedule = {
   latest_n: number | null;
   data_coordinate: string | null;
   data_vector_id: number | null;
+  ingest_mode: StatcanIngestMode;
+  bulk_release_start: string | null;
+  bulk_release_end: string | null;
   fetch_metadata: boolean;
   fetch_data: boolean;
   enabled: boolean;
@@ -43,6 +57,9 @@ export type CreateScheduleBody = {
   latest_n?: number | null;
   data_coordinate?: string | null;
   data_vector_id?: number | null;
+  ingest_mode?: StatcanIngestMode;
+  bulk_release_start?: string | null;
+  bulk_release_end?: string | null;
   fetch_metadata?: boolean;
   fetch_data?: boolean;
   enabled?: boolean;

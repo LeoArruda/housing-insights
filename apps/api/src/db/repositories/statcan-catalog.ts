@@ -79,6 +79,31 @@ export function catalogHasProduct(db: Database, productId: number): boolean {
   return row != null;
 }
 
+/** Match `subject_codes` JSON-ish text from catalog loader (substring; may over-match on numeric codes). */
+export function listProductIdsForSubjectCode(
+  db: Database,
+  subjectCode: string,
+): number[] {
+  const code = subjectCode.trim();
+  if (code === "") return [];
+  const needle = `%"${code}"%`;
+  const rows = db
+    .query(
+      `SELECT product_id FROM statcan_cube_catalog
+       WHERE subject_codes IS NOT NULL AND subject_codes LIKE ?`,
+    )
+    .all(needle) as { product_id: number }[];
+  if (rows.length > 0) return rows.map((r) => r.product_id);
+  const loose = `%${code}%`;
+  const rowsLoose = db
+    .query(
+      `SELECT product_id FROM statcan_cube_catalog
+       WHERE subject_codes IS NOT NULL AND subject_codes LIKE ?`,
+    )
+    .all(loose) as { product_id: number }[];
+  return rowsLoose.map((r) => r.product_id);
+}
+
 export type CatalogSearchRow = {
   product_id: number;
   cansim_id: string | null;

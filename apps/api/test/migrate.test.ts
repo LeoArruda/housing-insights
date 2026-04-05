@@ -39,6 +39,7 @@ describe("runMigrations", () => {
     expect(names).toContain("statcan_wds_data_observation");
     expect(names).toContain("statcan_wds_normalize_error");
     expect(names).toContain("operation_logs");
+    expect(names).toContain("statcan_subject_subscriptions");
 
     runMigrations(db, migrationsDirectory());
     const versions = db
@@ -58,6 +59,9 @@ describe("runMigrations", () => {
       1,
     );
     expect(versions.filter((v) => v.version === "006_operation_logs").length).toBe(1);
+    expect(versions.filter((v) => v.version === "007_statcan_wds_operator_ux").length).toBe(
+      1,
+    );
 
     const pilot = db
       .query(

@@ -11,6 +11,10 @@ export type StatcanProductScheduleRow = {
   latest_n: number | null;
   data_coordinate: string | null;
   data_vector_id: number | null;
+  /** WDS pull strategy: latest_n | changed_series | changed_cube | bulk_range | full_table_csv | full_table_sdmx */
+  ingest_mode: string;
+  bulk_release_start: string | null;
+  bulk_release_end: string | null;
   fetch_metadata: number;
   fetch_data: number;
   enabled: number;
@@ -19,6 +23,12 @@ export type StatcanProductScheduleRow = {
   last_error: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/** Schedule row with optional StatCan catalog titles (LEFT JOIN). */
+export type StatcanProductScheduleWithCatalogRow = StatcanProductScheduleRow & {
+  cube_title_en: string | null;
+  cube_title_fr: string | null;
 };
 
 export function listDueSchedules(
@@ -42,6 +52,20 @@ export function listAllSchedules(db: Database): StatcanProductScheduleRow[] {
     .all() as StatcanProductScheduleRow[];
 }
 
+/** List schedules with `cube_title_en` / `cube_title_fr` from `statcan_cube_catalog` when present. */
+export function listAllSchedulesWithCatalog(
+  db: Database,
+): StatcanProductScheduleWithCatalogRow[] {
+  return db
+    .query(
+      `SELECT s.*, c.cube_title_en AS cube_title_en, c.cube_title_fr AS cube_title_fr
+       FROM statcan_product_schedules s
+       LEFT JOIN statcan_cube_catalog c ON c.product_id = s.product_id
+       ORDER BY s.product_id`,
+    )
+    .all() as StatcanProductScheduleWithCatalogRow[];
+}
+
 export function getScheduleById(
   db: Database,
   id: number,
@@ -49,6 +73,20 @@ export function getScheduleById(
   return db
     .query(`SELECT * FROM statcan_product_schedules WHERE id = ?`)
     .get(id) as StatcanProductScheduleRow | undefined;
+}
+
+export function getScheduleByIdWithCatalog(
+  db: Database,
+  id: number,
+): StatcanProductScheduleWithCatalogRow | undefined {
+  return db
+    .query(
+      `SELECT s.*, c.cube_title_en AS cube_title_en, c.cube_title_fr AS cube_title_fr
+       FROM statcan_product_schedules s
+       LEFT JOIN statcan_cube_catalog c ON c.product_id = s.product_id
+       WHERE s.id = ?`,
+    )
+    .get(id) as StatcanProductScheduleWithCatalogRow | undefined;
 }
 
 export function getScheduleByProductId(
@@ -70,6 +108,9 @@ export type InsertScheduleInput = {
   latest_n: number | null;
   data_coordinate: string | null;
   data_vector_id: number | null;
+  ingest_mode?: string;
+  bulk_release_start?: string | null;
+  bulk_release_end?: string | null;
   fetch_metadata: boolean;
   fetch_data: boolean;
   enabled: boolean;
@@ -81,12 +122,14 @@ export function insertSchedule(
   input: InsertScheduleInput,
 ): number {
   const now = new Date().toISOString();
+  const ingestMode = input.ingest_mode ?? "latest_n";
   const r = db.run(
     `INSERT INTO statcan_product_schedules (
       product_id, frequency, hour_utc, minute_utc, day_of_week, day_of_month,
-      latest_n, data_coordinate, data_vector_id, fetch_metadata, fetch_data,
+      latest_n, data_coordinate, data_vector_id, ingest_mode, bulk_release_start, bulk_release_end,
+      fetch_metadata, fetch_data,
       enabled, next_run_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.product_id,
       input.frequency,
@@ -97,6 +140,9 @@ export function insertSchedule(
       input.latest_n,
       input.data_coordinate,
       input.data_vector_id,
+      ingestMode,
+      input.bulk_release_start ?? null,
+      input.bulk_release_end ?? null,
       input.fetch_metadata ? 1 : 0,
       input.fetch_data ? 1 : 0,
       input.enabled ? 1 : 0,
@@ -117,6 +163,9 @@ export type UpdateSchedulePatch = Partial<{
   latest_n: number | null;
   data_coordinate: string | null;
   data_vector_id: number | null;
+  ingest_mode: string;
+  bulk_release_start: string | null;
+  bulk_release_end: string | null;
   fetch_metadata: boolean;
   fetch_data: boolean;
   enabled: boolean;
@@ -131,6 +180,9 @@ export function updateSchedule(
   const row = getScheduleById(db, id);
   if (!row) return;
   const now = new Date().toISOString();
+  const ingestMode =
+    row.ingest_mode ??
+    "latest_n";
   const merged = {
     frequency: patch.frequency ?? row.frequency,
     hour_utc: patch.hour_utc ?? row.hour_utc,
@@ -148,6 +200,16 @@ export function updateSchedule(
       patch.data_vector_id !== undefined
         ? patch.data_vector_id
         : row.data_vector_id,
+    ingest_mode:
+      patch.ingest_mode !== undefined ? patch.ingest_mode : ingestMode,
+    bulk_release_start:
+      patch.bulk_release_start !== undefined
+        ? patch.bulk_release_start
+        : row.bulk_release_start,
+    bulk_release_end:
+      patch.bulk_release_end !== undefined
+        ? patch.bulk_release_end
+        : row.bulk_release_end,
     fetch_metadata:
       patch.fetch_metadata !== undefined
         ? patch.fetch_metadata
@@ -161,7 +223,8 @@ export function updateSchedule(
   db.run(
     `UPDATE statcan_product_schedules SET
       frequency = ?, hour_utc = ?, minute_utc = ?, day_of_week = ?, day_of_month = ?,
-      latest_n = ?, data_coordinate = ?, data_vector_id = ?, fetch_metadata = ?, fetch_data = ?,
+      latest_n = ?, data_coordinate = ?, data_vector_id = ?, ingest_mode = ?, bulk_release_start = ?, bulk_release_end = ?,
+      fetch_metadata = ?, fetch_data = ?,
       enabled = ?, next_run_at = ?, updated_at = ?
     WHERE id = ?`,
     [
@@ -173,6 +236,9 @@ export function updateSchedule(
       merged.latest_n,
       merged.data_coordinate,
       merged.data_vector_id,
+      merged.ingest_mode,
+      merged.bulk_release_start,
+      merged.bulk_release_end,
       merged.fetch_metadata ? 1 : 0,
       merged.fetch_data ? 1 : 0,
       merged.enabled ? 1 : 0,

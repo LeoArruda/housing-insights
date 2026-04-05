@@ -16,6 +16,8 @@ function schedule(
   return {
     id: 1,
     product_id: 99,
+    cube_title_en: "Test cube",
+    cube_title_fr: null,
     frequency: "daily",
     hour_utc: 6,
     minute_utc: 5,
@@ -24,6 +26,9 @@ function schedule(
     latest_n: null,
     data_coordinate: null,
     data_vector_id: null,
+    ingest_mode: "latest_n",
+    bulk_release_start: null,
+    bulk_release_end: null,
     fetch_metadata: true,
     fetch_data: true,
     enabled: true,

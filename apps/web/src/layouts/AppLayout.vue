@@ -13,6 +13,8 @@ const scheduleActive = computed(() => {
   );
 });
 
+const subscriptionsActive = computed(() => route.name === "subscriptions");
+
 const jobsActive = computed(
   () => route.name === "jobs" || route.name === "jobs-detail",
 );
@@ -58,6 +60,13 @@ function navItemClass(active: boolean) {
           :class="navItemClass(scheduleActive)"
         >
           Schedules
+        </RouterLink>
+        <RouterLink
+          v-if="isOperator"
+          to="/subscriptions"
+          :class="navItemClass(subscriptionsActive)"
+        >
+          Subject feeds
         </RouterLink>
         <RouterLink
           to="/jobs"

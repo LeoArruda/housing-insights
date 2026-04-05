@@ -44,6 +44,13 @@ const router = createRouter({
           component: () => import("../views/schedules/ScheduleDetailView.vue"),
         },
         {
+          path: "subscriptions",
+          name: "subscriptions",
+          meta: { operatorOnly: true },
+          component: () =>
+            import("../views/subscriptions/SubjectSubscriptionsView.vue"),
+        },
+        {
           path: "jobs",
           name: "jobs",
           component: () => import("../views/jobs/JobsListView.vue"),

@@ -3,12 +3,14 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { ApiHttpError } from "../../api/client.ts";
+import { postStatcanSeriesInfo } from "../../api/statcan-ingest.ts";
 import {
   createStatcanSchedule,
   searchStatcanCatalog,
   type CreateScheduleBody,
   type ScheduleFrequency,
   type StatcanCatalogRow,
+  type StatcanIngestMode,
 } from "../../api/statcan-schedules.ts";
 import {
   formatApiError,
@@ -36,12 +38,20 @@ const minuteUtc = ref(0);
 const dayOfWeek = ref<number | null>(null);
 const dayOfMonth = ref<number | null>(null);
 
+const ingestMode = ref<StatcanIngestMode>("latest_n");
+const bulkReleaseStart = ref("");
+const bulkReleaseEnd = ref("");
+
 const latestN = ref<number | null>(null);
 const dataCoordinate = ref("");
 const dataVectorId = ref("");
 const fetchMetadata = ref(true);
 const fetchData = ref(true);
 const enabled = ref(true);
+
+const seriesInfoJson = ref<string | null>(null);
+const seriesInfoLoading = ref(false);
+const seriesInfoError = ref<string | null>(null);
 
 const stepError = ref<string | null>(null);
 const submitError = ref<string | null>(null);
@@ -82,7 +92,44 @@ onMounted(() => {
   void runCatalogSearch();
 });
 
-function validateStep2(): string | null {
+async function validateSeries() {
+  seriesInfoError.value = null;
+  seriesInfoJson.value = null;
+  if (selectedProductId.value == null) {
+    seriesInfoError.value = "Select a product first (step 1).";
+    return;
+  }
+  const vidTrim = dataVectorId.value.trim();
+  const vid = vidTrim === "" ? null : Number(vidTrim);
+  if (vidTrim !== "" && !Number.isInteger(vid)) {
+    seriesInfoError.value = "data_vector_id must be a positive integer when set.";
+    return;
+  }
+  const coord = dataCoordinate.value.trim();
+  if (!coord && vid == null) {
+    seriesInfoError.value = "Enter a coordinate or vector id to validate.";
+    return;
+  }
+  seriesInfoLoading.value = true;
+  try {
+    const body =
+      vid != null
+        ? { product_id: selectedProductId.value, vector_id: vid }
+        : { product_id: selectedProductId.value, coordinate: coord };
+    const res = await postStatcanSeriesInfo(body);
+    seriesInfoJson.value = JSON.stringify(res.data, null, 2);
+  } catch (e) {
+    if (e instanceof ApiHttpError) {
+      seriesInfoError.value = formatApiError(e);
+    } else {
+      seriesInfoError.value = "Series info request failed.";
+    }
+  } finally {
+    seriesInfoLoading.value = false;
+  }
+}
+
+function validateCadence(): string | null {
   const v = validateWizardStep2({
     frequency: frequency.value,
     hour_utc: hourUtc.value,
@@ -91,7 +138,12 @@ function validateStep2(): string | null {
     day_of_month: dayOfMonth.value,
   });
   if (!v.ok) return v.messages.join("; ");
+  return null;
+}
 
+function validateAll(): string | null {
+  const c = validateCadence();
+  if (c) return c;
   const vidTrim = dataVectorId.value.trim();
   const vid = vidTrim === "" ? null : Number(vidTrim);
   const ln =
@@ -106,6 +158,14 @@ function validateStep2(): string | null {
     data_vector_id: vidTrim === "" ? null : vid,
   });
   if (!adv.ok) return adv.messages.join("; ");
+  if (ingestMode.value === "bulk_range") {
+    if (vidTrim === "" || !Number.isInteger(vid)) {
+      return "bulk_range requires data_vector_id";
+    }
+    if (!bulkReleaseStart.value.trim() || !bulkReleaseEnd.value.trim()) {
+      return "bulk_range requires bulk release start and end (ISO datetimes per WDS)";
+    }
+  }
   return null;
 }
 
@@ -120,21 +180,25 @@ function goNext() {
     return;
   }
   if (step.value === 2) {
-    const err = validateStep2();
-    if (err) {
-      stepError.value = err;
-      return;
-    }
     step.value = 3;
     return;
   }
   if (step.value === 3) {
-    const err = validateStep2();
+    const err = validateCadence();
     if (err) {
       stepError.value = err;
       return;
     }
     step.value = 4;
+    return;
+  }
+  if (step.value === 4) {
+    const err = validateAll();
+    if (err) {
+      stepError.value = err;
+      return;
+    }
+    step.value = 5;
   }
 }
 
@@ -160,6 +224,11 @@ function buildBody(): CreateScheduleBody {
     data_coordinate:
       dataCoordinate.value.trim() === "" ? null : dataCoordinate.value.trim(),
     data_vector_id: vidTrim === "" ? null : Number(vidTrim),
+    ingest_mode: ingestMode.value,
+    bulk_release_start:
+      bulkReleaseStart.value.trim() === "" ? null : bulkReleaseStart.value.trim(),
+    bulk_release_end:
+      bulkReleaseEnd.value.trim() === "" ? null : bulkReleaseEnd.value.trim(),
     fetch_metadata: fetchMetadata.value,
     fetch_data: fetchData.value,
     enabled: enabled.value,
@@ -168,7 +237,7 @@ function buildBody(): CreateScheduleBody {
 
 async function submitCreate() {
   submitError.value = null;
-  const err = validateStep2();
+  const err = validateAll();
   if (err) {
     submitError.value = err;
     return;
@@ -200,6 +269,15 @@ function selectRow(row: StatcanCatalogRow) {
   selectedProductId.value = row.product_id;
   selectedRow.value = row;
 }
+
+const ingestModeHelp: Record<StatcanIngestMode, string> = {
+  latest_n: "Rolling latest N periods (default).",
+  changed_series: "Only when your series appears in StatCan’s changed-series list for the run.",
+  changed_cube: "Only when the cube is listed in changed-cube for that UTC date.",
+  bulk_range: "Vector bulk by release-date window (requires vector + bulk release fields).",
+  full_table_csv: "Download full table CSV for the product (large).",
+  full_table_sdmx: "Download full table SDMX package (binary stored as base64 in raw payloads).",
+};
 </script>
 
 <template>
@@ -208,13 +286,14 @@ function selectRow(row: StatcanCatalogRow) {
       <RouterLink to="/schedules" class="link">← Schedules</RouterLink>
     </p>
     <h1 class="title">New StatCan schedule</h1>
-    <p class="sub">Create a per-product schedule (all times UTC).</p>
+    <p class="sub">Product → series → cadence (UTC) → ingest mode → review.</p>
 
     <ol class="steps" aria-label="Wizard steps">
       <li :class="{ active: step === 1, done: step > 1 }">1. Catalog</li>
-      <li :class="{ active: step === 2, done: step > 2 }">2. Cadence</li>
-      <li :class="{ active: step === 3, done: step > 3 }">3. Advanced</li>
-      <li :class="{ active: step === 4 }">4. Review</li>
+      <li :class="{ active: step === 2, done: step > 2 }">2. Series</li>
+      <li :class="{ active: step === 3, done: step > 3 }">3. Cadence</li>
+      <li :class="{ active: step === 4, done: step > 4 }">4. Ingest</li>
+      <li :class="{ active: step === 5 }">5. Review</li>
     </ol>
 
     <p v-if="stepError" class="error" role="alert">{{ stepError }}</p>
@@ -252,11 +331,7 @@ function selectRow(row: StatcanCatalogRow) {
               :class="{ picked: selectedProductId === row.product_id }"
             >
               <td>
-                <button
-                  type="button"
-                  class="pick"
-                  @click="selectRow(row)"
-                >
+                <button type="button" class="pick" @click="selectRow(row)">
                   Select
                 </button>
               </td>
@@ -281,6 +356,44 @@ function selectRow(row: StatcanCatalogRow) {
 
     <!-- Step 2 -->
     <section v-show="step === 2" class="card">
+      <h2>Series (coordinate or vector)</h2>
+      <p class="hint">
+        Use WDS metadata to validate: optional
+        <strong>data_coordinate</strong> (dot-separated members) or
+        <strong>data_vector_id</strong>. Click Validate to fetch series titles
+        from StatCan.
+      </p>
+      <div class="form-grid">
+        <label class="field wide">
+          <span>data_coordinate</span>
+          <input v-model="dataCoordinate" class="input" type="text" />
+        </label>
+        <label class="field">
+          <span>data_vector_id</span>
+          <input
+            v-model="dataVectorId"
+            class="input"
+            type="text"
+            placeholder="positive integer"
+          />
+        </label>
+      </div>
+      <p class="nav-buttons">
+        <button
+          type="button"
+          class="btn-ghost"
+          :disabled="seriesInfoLoading"
+          @click="validateSeries"
+        >
+          {{ seriesInfoLoading ? "Validating…" : "Validate series (WDS)" }}
+        </button>
+      </p>
+      <p v-if="seriesInfoError" class="error">{{ seriesInfoError }}</p>
+      <pre v-if="seriesInfoJson" class="series-preview">{{ seriesInfoJson }}</pre>
+    </section>
+
+    <!-- Step 3 -->
+    <section v-show="step === 3" class="card">
       <h2>Cadence (UTC)</h2>
       <p class="hint">
         hour_utc 0–23, minute_utc 0–59. Weekly requires day_of_week (0 = Sunday
@@ -350,62 +463,64 @@ function selectRow(row: StatcanCatalogRow) {
       </div>
     </section>
 
-    <!-- Step 3 -->
-    <section v-show="step === 3" class="card">
-      <h2>Advanced options</h2>
-      <details class="details">
-        <summary>Optional fields</summary>
-        <div class="form-grid inner">
-          <label class="field">
-            <span>latest_n (1–200)</span>
-            <input
-              v-model.number="latestN"
-              class="input"
-              type="number"
-              min="1"
-              max="200"
-              placeholder="empty = null"
-            />
-          </label>
-          <label class="field wide">
-            <span>data_coordinate</span>
-            <input v-model="dataCoordinate" class="input" type="text" />
-          </label>
-          <label class="field">
-            <span>data_vector_id</span>
-            <input
-              v-model="dataVectorId"
-              class="input"
-              type="text"
-              placeholder="positive integer"
-            />
-          </label>
-          <label class="field check">
-            <input v-model="fetchMetadata" type="checkbox" />
-            <span>fetch_metadata</span>
-          </label>
-          <label class="field check">
-            <input v-model="fetchData" type="checkbox" />
-            <span>fetch_data</span>
-          </label>
-          <label class="field check">
-            <input v-model="enabled" type="checkbox" />
-            <span>enabled</span>
-          </label>
-        </div>
-      </details>
-      <p class="muted small">
-        Defaults: fetch_metadata and fetch_data on, schedule enabled. Collapse
-        to keep defaults.
-      </p>
-    </section>
-
     <!-- Step 4 -->
     <section v-show="step === 4" class="card">
+      <h2>Ingest mode &amp; options</h2>
+      <div class="form-grid">
+        <label class="field wide">
+          <span>ingest_mode</span>
+          <select v-model="ingestMode" class="input">
+            <option value="latest_n">latest_n</option>
+            <option value="changed_series">changed_series</option>
+            <option value="changed_cube">changed_cube</option>
+            <option value="bulk_range">bulk_range</option>
+            <option value="full_table_csv">full_table_csv</option>
+            <option value="full_table_sdmx">full_table_sdmx</option>
+          </select>
+        </label>
+        <p class="field wide muted small">{{ ingestModeHelp[ingestMode] }}</p>
+        <label v-if="ingestMode === 'bulk_range'" class="field wide">
+          <span>bulk_release_start (ISO)</span>
+          <input v-model="bulkReleaseStart" class="input" type="text" />
+        </label>
+        <label v-if="ingestMode === 'bulk_range'" class="field wide">
+          <span>bulk_release_end (ISO)</span>
+          <input v-model="bulkReleaseEnd" class="input" type="text" />
+        </label>
+        <label class="field">
+          <span>latest_n (1–200)</span>
+          <input
+            v-model.number="latestN"
+            class="input"
+            type="number"
+            min="1"
+            max="200"
+            placeholder="empty = null"
+          />
+        </label>
+        <label class="field check">
+          <input v-model="fetchMetadata" type="checkbox" />
+          <span>fetch_metadata</span>
+        </label>
+        <label class="field check">
+          <input v-model="fetchData" type="checkbox" />
+          <span>fetch_data</span>
+        </label>
+        <label class="field check">
+          <input v-model="enabled" type="checkbox" />
+          <span>enabled</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Step 5 -->
+    <section v-show="step === 5" class="card">
       <h2>Review</h2>
       <dl class="review">
         <dt>product_id</dt>
         <dd>{{ selectedProductId }}</dd>
+        <dt>ingest_mode</dt>
+        <dd>{{ ingestMode }}</dd>
         <dt>Frequency / time (UTC)</dt>
         <dd>
           {{ frequency }} · {{ formatUtcTime(hourUtc, minuteUtc) }}
@@ -422,6 +537,10 @@ function selectRow(row: StatcanCatalogRow) {
         <dd>{{ dataCoordinate.trim() || "null" }}</dd>
         <dt>data_vector_id</dt>
         <dd>{{ dataVectorId.trim() || "null" }}</dd>
+        <dt v-if="ingestMode === 'bulk_range'">bulk window</dt>
+        <dd v-if="ingestMode === 'bulk_range'">
+          {{ bulkReleaseStart || "—" }} → {{ bulkReleaseEnd || "—" }}
+        </dd>
         <dt>fetch_metadata / fetch_data / enabled</dt>
         <dd>
           {{ fetchMetadata }} / {{ fetchData }} / {{ enabled }}
@@ -447,7 +566,7 @@ function selectRow(row: StatcanCatalogRow) {
         Back
       </button>
       <button
-        v-if="step < 4"
+        v-if="step < 5"
         type="button"
         class="btn-primary"
         @click="goNext"
@@ -579,14 +698,15 @@ function selectRow(row: StatcanCatalogRow) {
   gap: 0.75rem 1rem;
 }
 
-.form-grid.inner {
+.series-preview {
   margin-top: 0.75rem;
-}
-
-.details summary {
-  cursor: pointer;
-  color: var(--hi-accent);
-  font-size: 0.9rem;
+  padding: 0.75rem;
+  max-height: 220px;
+  overflow: auto;
+  font-size: 0.75rem;
+  border: 1px solid var(--hi-border);
+  border-radius: 6px;
+  background: var(--hi-hover);
 }
 
 .table-wrap {

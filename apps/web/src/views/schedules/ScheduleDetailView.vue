@@ -8,11 +8,13 @@ import {
   patchStatcanSchedule,
   type PatchScheduleBody,
   type ScheduleFrequency,
+  type StatcanIngestMode,
   type StatcanSchedule,
 } from "../../api/statcan-schedules.ts";
 import { useStatcanSchedulesQuery } from "../../composables/useStatcanSchedules.ts";
 import {
   formatApiError,
+  truncateText,
   validateWizardAdvanced,
   validateWizardStep2,
 } from "../../composables/statcanScheduleHelpers.ts";
@@ -72,6 +74,9 @@ const draft = ref<{
   latest_n: number | null;
   data_coordinate: string;
   data_vector_id: string;
+  ingest_mode: StatcanIngestMode;
+  bulk_release_start: string;
+  bulk_release_end: string;
   fetch_metadata: boolean;
   fetch_data: boolean;
 } | null>(null);
@@ -87,6 +92,9 @@ function syncDraftFromSchedule(s: StatcanSchedule) {
     data_coordinate: s.data_coordinate ?? "",
     data_vector_id:
       s.data_vector_id != null ? String(s.data_vector_id) : "",
+    ingest_mode: s.ingest_mode ?? "latest_n",
+    bulk_release_start: s.bulk_release_start ?? "",
+    bulk_release_end: s.bulk_release_end ?? "",
     fetch_metadata: s.fetch_metadata,
     fetch_data: s.fetch_data,
   };
@@ -173,6 +181,11 @@ async function saveEdits() {
     latest_n: normalizedLatestN(d.latest_n),
     data_coordinate: d.data_coordinate.trim() === "" ? null : d.data_coordinate.trim(),
     data_vector_id: vidTrim === "" ? null : Number(vidTrim),
+    ingest_mode: d.ingest_mode,
+    bulk_release_start:
+      d.bulk_release_start.trim() === "" ? null : d.bulk_release_start.trim(),
+    bulk_release_end:
+      d.bulk_release_end.trim() === "" ? null : d.bulk_release_end.trim(),
     fetch_metadata: d.fetch_metadata,
     fetch_data: d.fetch_data,
   };
@@ -249,6 +262,19 @@ const dowOptions = [
     </p>
 
     <template v-else-if="schedule && draft">
+      <p v-if="schedule.cube_title_en" class="product-title">
+        {{ schedule.cube_title_en }}
+      </p>
+      <p v-else class="product-title muted">
+        No English catalog title for product_id {{ schedule.product_id }} (index
+        the catalog or confirm the product exists in StatCan).
+      </p>
+      <p
+        v-if="schedule.cube_title_fr"
+        class="product-title-fr muted"
+      >
+        {{ schedule.cube_title_fr }}
+      </p>
       <div class="toolbar">
         <label class="toggle">
           <input
@@ -272,6 +298,12 @@ const dowOptions = [
           <dd>{{ schedule.id }}</dd>
           <dt>product_id</dt>
           <dd>{{ schedule.product_id }}</dd>
+          <dt>Title (EN)</dt>
+          <dd>{{ truncateText(schedule.cube_title_en, 500) }}</dd>
+          <dt>Title (FR)</dt>
+          <dd>{{ truncateText(schedule.cube_title_fr, 500) }}</dd>
+          <dt>ingest_mode</dt>
+          <dd>{{ schedule.ingest_mode ?? "latest_n" }}</dd>
           <dt>created_at</dt>
           <dd class="mono">{{ schedule.created_at }}</dd>
           <dt>updated_at</dt>
@@ -372,6 +404,31 @@ const dowOptions = [
               placeholder="positive int or empty"
             />
           </label>
+          <label class="field wide">
+            <span>ingest_mode</span>
+            <select v-model="draft.ingest_mode" class="input">
+              <option value="latest_n">latest_n</option>
+              <option value="changed_series">changed_series</option>
+              <option value="changed_cube">changed_cube</option>
+              <option value="bulk_range">bulk_range</option>
+              <option value="full_table_csv">full_table_csv</option>
+              <option value="full_table_sdmx">full_table_sdmx</option>
+            </select>
+          </label>
+          <label
+            v-if="draft.ingest_mode === 'bulk_range'"
+            class="field wide"
+          >
+            <span>bulk_release_start</span>
+            <input v-model="draft.bulk_release_start" type="text" class="input" />
+          </label>
+          <label
+            v-if="draft.ingest_mode === 'bulk_range'"
+            class="field wide"
+          >
+            <span>bulk_release_end</span>
+            <input v-model="draft.bulk_release_end" type="text" class="input" />
+          </label>
           <label class="field check">
             <input v-model="draft.fetch_metadata" type="checkbox" />
             <span>fetch_metadata</span>
@@ -404,9 +461,24 @@ const dowOptions = [
 }
 
 .title {
-  margin: 0 0 1rem;
+  margin: 0 0 0.35rem;
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+.product-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 48rem;
+  color: var(--hi-fg);
+}
+
+.product-title-fr {
+  margin: -0.5rem 0 1rem;
+  font-size: 0.9rem;
+  max-width: 48rem;
 }
 
 .link {

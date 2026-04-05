@@ -42,7 +42,8 @@ function fmtIso(iso: string | null): string {
       <table v-else class="table">
         <thead>
           <tr>
-            <th>Product ID</th>
+            <th>Product</th>
+            <th>Title (EN)</th>
             <th>Frequency</th>
             <th>UTC time</th>
             <th>Enabled</th>
@@ -54,10 +55,11 @@ function fmtIso(iso: string | null): string {
         <tbody>
           <tr v-for="s in schedules" :key="s.id">
             <td>
-              <RouterLink :to="`/schedules/${s.id}`" class="link">{{
+              <RouterLink :to="`/schedules/${s.id}`" class="link mono">{{
                 s.product_id
               }}</RouterLink>
             </td>
+            <td class="title-cell">{{ truncateText(s.cube_title_en, 64) }}</td>
             <td>{{ s.frequency }}</td>
             <td class="mono">{{ utcScheduleSummary(s) }}</td>
             <td>
@@ -191,5 +193,11 @@ function fmtIso(iso: string | null): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.title-cell {
+  max-width: 22rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
 }
 </style>

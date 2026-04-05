@@ -54,6 +54,8 @@ const envSchema = z.object({
   DAEMON_STATCAN_WDS_DATA_CRON: z.string().default("30 6 * * *"),
   /** Tick for per-product StatCan schedules (`statcan-scheduled-ingest` job). */
   DAEMON_STATCAN_SCHEDULE_TICK_CRON: z.string().default("*/5 * * * *"),
+  /** If set (non-empty), daemon runs `statcan-subject-changed-ingest` (global subject subscriptions × changed cubes). */
+  DAEMON_STATCAN_SUBJECT_CHANGED_CRON: z.string().optional(),
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),
   /** If set (non-empty), daemon runs `statcan-wds-data-normalize` on this cron. Omit to run via CLI only. */
   DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON: z.string().optional(),
