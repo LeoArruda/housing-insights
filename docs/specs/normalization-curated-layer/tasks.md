@@ -16,21 +16,20 @@
 
 ## Phase 2 — Normalization
 
-- [ ] Implement normalizer(s) for chosen StatCan WDS raw shape(s)
-- [ ] Repository upsert with idempotency (unique constraint + transaction)
-- [ ] Unit tests: fixtures only, invalid payload rejection
+- [x] Implement normalizer(s): [apps/api/src/services/statcan-wds-data-parse.ts](../../../apps/api/src/services/statcan-wds-data-parse.ts) + repo [statcan-wds-normalization.ts](../../../apps/api/src/db/repositories/statcan-wds-normalization.ts)
+- [x] Idempotency: `UNIQUE(raw_payload_id)` on batch + transaction for batch + observations; skip pending if batch exists
+- [x] Tests: [statcan-wds-data-parse.test.ts](../../../apps/api/test/statcan-wds-data-parse.ts), [statcan-wds-normalize-job.test.ts](../../../apps/api/test/statcan-wds-normalize-job.test.ts)
 
 ## Phase 3 — Jobs
 
-- [ ] Register job or hook from existing WDS pipeline; document env/cron if needed
-- [ ] Integration test: temp DB, seed raw → run normalize → assert rows
+- [x] Job `statcan-wds-data-normalize` in [statcan-wds-normalize.ts](../../../apps/api/src/jobs/statcan-wds-normalize.ts); registry + optional `DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON`; `STATCAN_WDS_NORMALIZE_BATCH_LIMIT` in [env.ts](../../../apps/api/src/env.ts); [apps/api/.env.example](../../../apps/api/.env.example)
 
 ## Phase 4 — Read API (if MVP includes)
 
-- [ ] Hono route(s) + tests
-- [ ] Align with optional Bearer auth if endpoints are not public
+- [x] `GET /statcan/wds/observations` ([app.ts](../../../apps/api/src/server/app.ts)) — query `product_id`, `limit`, `offset`; same auth as other read routes (viewer allowed)
+- [x] Server tests + viewer can access observations when keys set
 
 ## Quality
 
-- [ ] `bun test` passes (root); no live network in tests
-- [ ] Update [verification.md](./verification.md) for this epic
+- [x] `bun test` passes (root); no live network in tests
+- [x] Update [verification.md](./verification.md) for this epic

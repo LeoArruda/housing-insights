@@ -1,12 +1,19 @@
 import { afterAll, describe, expect, it } from "bun:test";
 import { unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { openDatabase } from "../src/db/database.ts";
 import { migrationsDirectory, runMigrations } from "../src/db/migrate.ts";
+import * as normRepo from "../src/db/repositories/statcan-wds-normalization.ts";
 import { loadEnv } from "../src/env.ts";
+import { runJobByName } from "../src/jobs/registry.ts";
+import type { JobContext } from "../src/jobs/runners.ts";
 import { createApp } from "../src/server/app.ts";
+import { sha256Hex } from "../src/util/hash.ts";
 
 const tmpDb = join(import.meta.dir, "_test_server.sqlite");
+const fixtureDir = join(import.meta.dir, "fixtures");
 
 function baseEnv(overrides: Record<string, string | undefined> = {}) {
   return loadEnv({
@@ -151,6 +158,53 @@ describe("read API", () => {
     db.close();
   });
 
+  it("GET /statcan/wds/observations after normalize job", async () => {
+    const env = baseEnv();
+    const db = openDatabase(env.DATABASE_PATH);
+    runMigrations(db, migrationsDirectory());
+    const body = readFileSync(
+      join(fixtureDir, "wds-vector-data-response.json"),
+      "utf-8",
+    );
+    const sha = sha256Hex(body);
+    const fetchedAt = new Date().toISOString();
+    db.run(
+      `INSERT INTO raw_payloads (source, source_key, fetched_at, content_type, body, sha256, job_run_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        normRepo.STATCAN_WDS_DATA_SOURCE,
+        "data:vector:32164132",
+        fetchedAt,
+        "application/json",
+        body,
+        sha,
+        null,
+      ],
+    );
+    const ctx: JobContext = { db, env };
+    await runJobByName(ctx, "statcan-wds-data-normalize");
+
+    const app = createApp(db, env);
+    const res = await app.request("/statcan/wds/observations?limit=10");
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      data: { product_id: number; ref_per: string; value: number }[];
+    };
+    expect(json.data.length).toBe(1);
+    expect(json.data[0].product_id).toBe(35100003);
+    expect(json.data[0].ref_per).toBe("2022-01-01");
+    expect(json.data[0].value).toBe(19.43);
+
+    const filtered = await app.request(
+      "/statcan/wds/observations?product_id=35100003&limit=5",
+    );
+    expect(filtered.status).toBe(200);
+    const fj = (await filtered.json()) as { data: unknown[] };
+    expect(fj.data.length).toBe(1);
+
+    db.close();
+  });
+
   it("dashboard keys: 401 without Bearer; viewer 403 on schedules; operator OK", async () => {
     const env = baseEnv({
       DASHBOARD_OPERATOR_KEY: "op-secret",
@@ -167,6 +221,11 @@ describe("read API", () => {
       headers: { Authorization: "Bearer vi-secret" },
     });
     expect(viewerJobs.status).toBe(200);
+
+    const viewerObs = await app.request("/statcan/wds/observations", {
+      headers: { Authorization: "Bearer vi-secret" },
+    });
+    expect(viewerObs.status).toBe(200);
 
     const viewerSched = await app.request("/statcan/schedules", {
       headers: { Authorization: "Bearer vi-secret" },

@@ -48,6 +48,13 @@ schedule(env.DAEMON_BOC_VALET_CRON, "boc-valet", () =>
   runJobByName(ctx, "boc-valet"),
 );
 
+const normalizeCron = env.DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON?.trim();
+if (normalizeCron) {
+  schedule(normalizeCron, "statcan-wds-data-normalize", () =>
+    runJobByName(ctx, "statcan-wds-data-normalize"),
+  );
+}
+
 console.info(
   `Daemon started (database: ${env.DATABASE_PATH}). Cron jobs registered.`,
 );

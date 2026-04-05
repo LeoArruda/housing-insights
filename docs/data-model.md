@@ -14,7 +14,7 @@ High-level reference for SQLite tables in `apps/api`. Forward-only migrations li
 
 ## StatCan WDS normalization (MVP slice 1 — Phase 0 locked)
 
-Spec: [docs/specs/normalization-curated-layer/spec.md](specs/normalization-curated-layer/spec.md). **Source:** `raw_payloads.source = 'statcan-wds-data'` only. **Reference fixture:** [apps/api/test/fixtures/wds-vector-data-response.json](../apps/api/test/fixtures/wds-vector-data-response.json). **Migration:** `005_statcan_wds_normalization.sql` (Phase 1 applied).
+Spec: [docs/specs/normalization-curated-layer/spec.md](specs/normalization-curated-layer/spec.md). **Source:** `raw_payloads.source = 'statcan-wds-data'` only. **Reference fixture:** [apps/api/test/fixtures/wds-vector-data-response.json](../apps/api/test/fixtures/wds-vector-data-response.json). **Migration:** `005_statcan_wds_normalization.sql`. **Populate:** CLI/daemon job `statcan-wds-data-normalize` (see `apps/api/src/jobs/statcan-wds-normalize.ts`). **Read API:** `GET /statcan/wds/observations`.
 
 ```text
 raw_payloads (existing)

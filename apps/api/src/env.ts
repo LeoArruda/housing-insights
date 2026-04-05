@@ -39,6 +39,8 @@ const envSchema = z.object({
   STATCAN_DEFAULT_DATA_COORDINATE: z.string().optional(),
   STATCAN_DATA_VECTOR_IDS: z.string().default(""),
   STATCAN_REQUEST_DELAY_MS: z.coerce.number().min(0).default(200),
+  /** Max `statcan-wds-data` raw rows processed per `statcan-wds-data-normalize` job run. */
+  STATCAN_WDS_NORMALIZE_BATCH_LIMIT: z.coerce.number().min(1).max(5000).default(500),
 
   DAEMON_STATCAN_RSS_CRON: z.string().default("0 * * * *"),
   DAEMON_BOC_RSS_CRON: z.string().default("15 * * * *"),
@@ -48,6 +50,8 @@ const envSchema = z.object({
   /** Tick for per-product StatCan schedules (`statcan-scheduled-ingest` job). */
   DAEMON_STATCAN_SCHEDULE_TICK_CRON: z.string().default("*/5 * * * *"),
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),
+  /** If set (non-empty), daemon runs `statcan-wds-data-normalize` on this cron. Omit to run via CLI only. */
+  DAEMON_STATCAN_WDS_DATA_NORMALIZE_CRON: z.string().optional(),
 
   /** If set, `Authorization: Bearer <token>` required on API routes except `/health` and `/health/ready`. Viewer cannot access `/statcan/schedules` or `/statcan/catalog`. */
   DASHBOARD_OPERATOR_KEY: z.string().optional(),

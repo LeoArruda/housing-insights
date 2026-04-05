@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as jobRunsRepo from "../db/repositories/job-runs.ts";
 import * as rawPayloadsRepo from "../db/repositories/raw-payloads.ts";
 import * as statcanCatalogRepo from "../db/repositories/statcan-catalog.ts";
+import * as statcanWdsNormRepo from "../db/repositories/statcan-wds-normalization.ts";
 import * as statcanSchedulesRepo from "../db/repositories/statcan-product-schedules.ts";
 import type { Env } from "../env.ts";
 import { computeNextRunAfter } from "../services/statcan-next-run.ts";
@@ -299,6 +300,35 @@ export function createApp(db: Database, env: Env) {
   });
 
   app.route("/statcan/schedules", statcanSchedules);
+
+  app.get("/statcan/wds/observations", (c) => {
+    const q = c.req.query();
+    const productParse = z.coerce.number().int().positive().safeParse(q.product_id);
+    const limitParse = z.coerce.number().min(1).max(500).safeParse(q.limit);
+    const offsetParse = z.coerce.number().min(0).safeParse(q.offset);
+    const limit = limitParse.success ? limitParse.data : 50;
+    const offset = offsetParse.success ? offsetParse.data : 0;
+    const rows = statcanWdsNormRepo.listStatcanWdsObservations(db, {
+      productId: productParse.success ? productParse.data : undefined,
+      limit,
+      offset,
+    });
+    return c.json({
+      data: rows.map((r) => ({
+        id: r.id,
+        batch_id: r.batch_id,
+        raw_payload_id: r.raw_payload_id,
+        product_id: r.product_id,
+        vector_id: r.vector_id,
+        coordinate: r.coordinate,
+        ref_per: r.ref_per,
+        value: r.value,
+        decimals: r.decimals,
+      })),
+      limit,
+      offset,
+    });
+  });
 
   app.get("/raw-payloads/:id", (c) => {
     const id = Number(c.req.param("id"));

@@ -19,7 +19,7 @@ Source lives under `apps/api/src/`:
 - `connectors/` — fetch + parse external sources (RSS, BoC Valet); `connectors/statcan/` — WDS REST client, catalog scoring, targeting
 - `db/` — SQLite open helper, SQL migrations, repositories
 - `jobs/` — job registry and runners (shared by CLI and daemon)
-- `server/` — Hono API: health, job runs, raw payloads, StatCan schedule CRUD, catalog search (`GET /statcan/catalog`), dashboard aggregates (`GET /stats/summary`), optional Bearer auth and CORS (see below)
+- `server/` — Hono API: health, job runs, raw payloads, StatCan schedule CRUD, catalog search (`GET /statcan/catalog`), curated WDS observations (`GET /statcan/wds/observations`), dashboard aggregates (`GET /stats/summary`), optional Bearer auth and CORS (see below)
 - `cli.ts`, `daemon.ts`, `main.ts` — entrypoints
 
 Tests and fixtures: `apps/api/test/` (no live HTTP in automated tests). Web unit tests: `apps/web/test/` (`bun run test:web` from repo root).
@@ -38,7 +38,7 @@ External feeds / APIs
    Read API (inspection only)
 ```
 
-**Normalization and curated tables** are in progress as a dedicated epic: [docs/specs/normalization-curated-layer/](specs/normalization-curated-layer/). Today’s deployed code still **persists raw** bodies primarily, with checksum-based deduplication per source; the spec above adds **typed rows and lineage** from `raw_payloads` without replacing raw storage.
+**Normalization (StatCan WDS data)** is implemented for `statcan-wds-data` raws: job `statcan-wds-data-normalize` fills `statcan_wds_data_batch` and `statcan_wds_data_observation`; `GET /statcan/wds/observations` reads curated points. Full multi-source normalization remains in [docs/specs/normalization-curated-layer/](specs/normalization-curated-layer/).
 
 ### StatCan WDS
 

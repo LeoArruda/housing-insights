@@ -8,6 +8,7 @@ import {
   jobStatcanWdsMetadata,
 } from "./runners.ts";
 import { jobStatcanScheduledIngest } from "./statcan-scheduled.ts";
+import { jobStatcanWdsDataNormalize } from "./statcan-wds-normalize.ts";
 
 export const JOB_NAMES = [
   "statcan-rss",
@@ -17,6 +18,7 @@ export const JOB_NAMES = [
   "statcan-wds-data",
   "statcan-scheduled-ingest",
   "boc-valet",
+  "statcan-wds-data-normalize",
 ] as const;
 
 export type JobName = (typeof JOB_NAMES)[number];
@@ -32,6 +34,7 @@ export const jobRegistry: Record<
   "statcan-wds-data": jobStatcanWdsData,
   "statcan-scheduled-ingest": jobStatcanScheduledIngest,
   "boc-valet": jobBocValet,
+  "statcan-wds-data-normalize": jobStatcanWdsDataNormalize,
 };
 
 export function isJobName(value: string): value is JobName {

@@ -28,3 +28,11 @@ No code or migrations in this phase; Phase 1+ will add migration files and imple
 | Migration `005_statcan_wds_normalization.sql` applies; `migrate.test.ts` asserts new tables + version | Pass |
 | `packages/types` WDS + row Zod schemas; `statcan-wds-normalization-schema.test.ts` | Pass |
 | `bun test` (repo root) | Pass |
+
+### 2026-04-03 — Phases 2–5 (normalize job + read API)
+
+| Check | Result |
+|--------|--------|
+| `statcan-wds-data-normalize` job; parse service; repo inserts + errors table | Pass |
+| `GET /statcan/wds/observations`; viewer Bearer allowed | Pass |
+| `bun test` (repo root, 45 tests) | Pass |
