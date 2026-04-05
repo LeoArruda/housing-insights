@@ -4,7 +4,7 @@
 
 This repository implements a **Canadian economy and housing signals** data platform: API-first ingestion, raw payload storage, job tracking, and a small read API for operations. The first iteration uses **Bun**, **TypeScript**, and **SQLite** (`bun:sqlite`).
 
-See also [docs/specs/platform-foundation/spec.md](specs/platform-foundation/spec.md) and [AGENTS.md](../AGENTS.md).
+See also [docs/specs/platform-foundation/spec.md](specs/platform-foundation/spec.md), [docs/specs/normalization-curated-layer/spec.md](specs/normalization-curated-layer/spec.md) (next epic: structured layers on top of raw), [docs/data-model.md](data-model.md), and [AGENTS.md](../AGENTS.md).
 
 ## Runtime layout
 
@@ -38,7 +38,7 @@ External feeds / APIs
    Read API (inspection only)
 ```
 
-**Normalization and curated tables** are planned; this slice stores **raw** bodies only, with checksum-based deduplication per source.
+**Normalization and curated tables** are in progress as a dedicated epic: [docs/specs/normalization-curated-layer/](specs/normalization-curated-layer/). Today’s deployed code still **persists raw** bodies primarily, with checksum-based deduplication per source; the spec above adds **typed rows and lineage** from `raw_payloads` without replacing raw storage.
 
 ### StatCan WDS
 

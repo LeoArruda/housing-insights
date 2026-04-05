@@ -463,21 +463,13 @@ Examples:
 
 ⸻
 
-First Milestone
+Milestones (living)
 
-Deliver:
-	•	project scaffold (Bun + TS)
-	•	SQLite connection + migrations (first iteration)
-	•	raw_payloads + job_runs tables
-	•	StatCan RSS connector
-	•	BoC RSS connector
-	•	StatCan WDS connector
-	•	BoC Valet connector
-	•	hourly scheduler
-	•	daily ingestion job
-	•	basic tests
+**Completed baseline** (track detail in `docs/specs/*/tasks.md`): platform scaffold, SQLite + `job_runs` / `raw_payloads`, StatCan/BoC connectors and jobs, StatCan WDS automation + schedules, read API + ops console (`web-ops-console`). See [docs/specs/platform-foundation/tasks.md](docs/specs/platform-foundation/tasks.md), [docs/specs/statcan-wds-automation/tasks.md](docs/specs/statcan-wds-automation/tasks.md), [docs/specs/web-ops-console/tasks.md](docs/specs/web-ops-console/tasks.md).
 
-Focus on one full vertical slice, not breadth.
+**Current focus:** [docs/specs/normalization-curated-layer/](docs/specs/normalization-curated-layer/) — raw → normalized → first curated tables (StatCan-first MVP), idempotent upserts, lineage to `raw_payloads`, fixture-based tests, optional read API.
+
+Focus on one full vertical slice per epic, not breadth.
 
 ⸻
 
