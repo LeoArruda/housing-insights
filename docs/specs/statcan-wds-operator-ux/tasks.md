@@ -1,6 +1,6 @@
 # Tasks: StatCan WDS operator UX
 
-> Canonical checklist for this epic. Keep aligned with [tasks/prd-statcan-wds-operator-ux.md](../../../tasks/prd-statcan-wds-operator-ux.md) story/FR checkboxes.
+> Canonical checklist for this epic. Keep aligned with [docs/prds/prd-statcan-wds-operator-ux.md](../../prds/prd-statcan-wds-operator-ux.md) story/FR checkboxes.
 
 ## Phase 1 — Schema + contracts
 

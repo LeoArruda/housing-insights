@@ -1,12 +1,12 @@
 # PRD: StatCan WDS operator-friendly series selection and ingestion modes
 
-> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../AGENTS.md)), **`docs/specs/statcan-wds-operator-ux/tasks.md` is canonical** for implementation status. This PRD remains the stakeholder contract; **keep story/FR checkboxes aligned** with that `tasks.md`. Technical detail: [spec.md](../docs/specs/statcan-wds-operator-ux/spec.md), [plan.md](../docs/specs/statcan-wds-operator-ux/plan.md). Builds on [statcan-wds-automation](../docs/specs/statcan-wds-automation/).
+> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../../AGENTS.md)), **`docs/specs/statcan-wds-operator-ux/tasks.md` is canonical** for implementation status. This PRD remains the stakeholder contract; **keep story/FR checkboxes aligned** with that `tasks.md`. Technical detail: [spec.md](../specs/statcan-wds-operator-ux/spec.md), [plan.md](../specs/statcan-wds-operator-ux/plan.md). Builds on [statcan-wds-automation](../specs/statcan-wds-automation/).
 
 ## Introduction / overview
 
 **Problem:** StatCan [Web Data Service (WDS)](https://www.statcan.gc.ca/en/developers/wds/user-guide) ingestion today requires operators to supply a **`data_vector_id`** and/or **`data_coordinate`** when scheduling pulls. Those identifiers are **internal WDS concepts** (numeric vector id; dot-separated **coordinate** string built from dimension **member** ids). Operators reason in **table titles, geographies, and indicators**, not raw coordinates—so schedule creation is error-prone and support-heavy.
 
-**Problem:** WDS exposes several **data access patterns** (“changes today,” “changes over time,” “latest N periods,” “bulk/range,” “full table download”). The platform currently uses **metadata** and **latest-N** style pulls ([`wds-routes.ts`](../apps/api/src/connectors/statcan/wds-routes.ts)); it does **not** yet productize **incremental** (changed-series) or **one-time full/backfill** flows in the UI and job model.
+**Problem:** WDS exposes several **data access patterns** (“changes today,” “changes over time,” “latest N periods,” “bulk/range,” “full table download”). The platform currently uses **metadata** and **latest-N** style pulls ([`wds-routes.ts`](../../apps/api/src/connectors/statcan/wds-routes.ts)); it does **not** yet productize **incremental** (changed-series) or **one-time full/backfill** flows in the UI and job model.
 
 **Product outcome:** Operators can **discover and confirm a series** without hand-entering vector/coordinate strings, choose an **ingestion strategy** appropriate to the use case (e.g. rolling latest vs incremental vs historical backfill), and **see** what mode ran in the ops console.
 
@@ -129,7 +129,7 @@
 
 ## Technical considerations
 
-- **WDS surface area:** Today’s code paths: [`StatCanClient`](../apps/api/src/connectors/statcan/statcan-client.ts), [`wds-routes.ts`](../apps/api/src/connectors/statcan/wds-routes.ts), [`statcan-scheduled.ts`](../apps/api/src/jobs/statcan-scheduled.ts). New methods need **routes**, **Zod validation**, **fixtures**, and **job** integration.
+- **WDS surface area:** Today’s code paths: [`StatCanClient`](../../apps/api/src/connectors/statcan/statcan-client.ts), [`wds-routes.ts`](../../apps/api/src/connectors/statcan/wds-routes.ts), [`statcan-scheduled.ts`](../../apps/api/src/jobs/statcan-scheduled.ts). New methods need **routes**, **Zod validation**, **fixtures**, and **job** integration.
 - **SQLite:** Schedule table may need new columns (`ingest_mode`, optional `backfill_until`, etc.)—**migrations** required.
 - **Idempotency:** `raw_payloads` uniqueness is `(source, sha256)` today; backfill/incremental may require **logical keys** for observations (coordination with normalization epic).
 - **Rate limits:** WDS documents per-IP limits; daemon/CLI must **throttle** and **retry** consistently.
@@ -162,4 +162,4 @@ Answer: I believe we can start with a raw-only first, but we must be prepared fo
 
 - [WDS User Guide](https://www.statcan.gc.ca/en/developers/wds/user-guide)
 - [PRD: Web operations console](./prd-web-ops-console.md)
-- [docs/specs/statcan-wds-automation/](../docs/specs/statcan-wds-automation/) (existing automation spec—may be extended or split)
+- [docs/specs/statcan-wds-automation/](../specs/statcan-wds-automation/) (existing automation spec—may be extended or split)

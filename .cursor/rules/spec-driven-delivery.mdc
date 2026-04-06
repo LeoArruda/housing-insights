@@ -11,7 +11,7 @@ Read [AGENTS.md](../../AGENTS.md) first.
 
 1. Identify the feature folder under `docs/specs/<feature>/` (`spec.md`, `plan.md`, `tasks.md`). If missing for new work, stop and add the minimum spec/plan/tasks (or ask the human to confirm scope).
 2. Treat **`tasks.md` as canonical** for what is done vs pending. Update checkboxes when you complete work.
-3. If the feature has a PRD under `tasks/` (e.g. web ops console), **keep PRD acceptance checkboxes aligned** with `tasks.md` in the same delivery.
+3. If the feature has a PRD under `docs/prds/` (e.g. web ops console), **keep PRD acceptance checkboxes aligned** with `tasks.md` in the same delivery.
 
 ## After material changes
 
@@ -34,5 +34,5 @@ Use **Orchestrator** thinking when multiple agents' trees would change in one re
 
 ## Web ops console
 
-- Spec: `docs/specs/web-ops-console/`. PRD: `tasks/prd-web-ops-console.md`.
+- Spec: `docs/specs/web-ops-console/`. PRD: `docs/prds/prd-web-ops-console.md`.
 - Optional local UI reference: `.vue-admin-ref` (often gitignored) — patterns/tokens only, not a full vendor copy.

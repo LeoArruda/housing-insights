@@ -1,6 +1,6 @@
 # Verification log: Web operations console
 
-Manual browser checks should follow the PRD user stories ([tasks/prd-web-ops-console.md](../../../tasks/prd-web-ops-console.md) US-003–009) and the scenarios in [spec.md](./spec.md). Use the dev-browser skill when an interactive pass is required.
+Manual browser checks should follow the PRD user stories ([docs/prds/prd-web-ops-console.md](../../prds/prd-web-ops-console.md) US-003–009) and the scenarios in [spec.md](./spec.md). Use the dev-browser skill when an interactive pass is required.
 
 ## Runs
 

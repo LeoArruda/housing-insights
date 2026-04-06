@@ -1,7 +1,7 @@
 # Feature specification: StatCan WDS operator UX (series discovery + ingest modes)
 
 **Status:** Implemented (MVP; manual browser verification optional)  
-**PRD:** [tasks/prd-statcan-wds-operator-ux.md](../../../tasks/prd-statcan-wds-operator-ux.md)  
+**PRD:** [docs/prds/prd-statcan-wds-operator-ux.md](../../prds/prd-statcan-wds-operator-ux.md)  
 **Builds on:** [statcan-wds-automation](../statcan-wds-automation/spec.md) (catalog, schedules, `statcan-scheduled-ingest`)
 
 ## Summary
@@ -25,7 +25,7 @@ Deliver **operator-friendly** StatCan WDS scheduling: **metadata-driven series s
 - **FR-T2:** Schedules support **`ingest_mode`** (enum) with backward compatibility: existing rows behave as **`latest_n`** (current semantics).
 - **FR-T3:** **Global subscriptions** associate operators’ intent (subject scope) with **changed-series** / **changed-cube** WDS flows; matching logic is documented and tested with fixtures.
 - **FR-T4:** **Bulk/range** and **full-table** (CSV/SDMX) ingestion are **explicit** actions (UI and/or CLI), with **idempotency** and dedupe strategy documented per mode.
-- **FR-T5:** New REST endpoints for discovery/validation follow **existing auth/RBAC** (operator vs viewer) per [web-ops-console](../../../tasks/prd-web-ops-console.md).
+- **FR-T5:** New REST endpoints for discovery/validation follow **existing auth/RBAC** (operator vs viewer) per [web-ops-console PRD](../../prds/prd-web-ops-console.md).
 - **FR-T6:** Jobs remain **observable** (`job_runs`, schedule `last_error`, operation logs) with enough metadata to triage mode and date windows.
 - **FR-T7:** All WDS additions: **Zod** validation, **fixture-based tests**, no live StatCan in CI.
 

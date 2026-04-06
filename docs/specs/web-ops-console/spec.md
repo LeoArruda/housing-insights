@@ -3,7 +3,7 @@
 **Feature**: `web-ops-console`  
 **Status**: Draft  
 **Date**: 2026-04-03  
-**Related PRD**: [tasks/prd-web-ops-console.md](../../../tasks/prd-web-ops-console.md)
+**Related PRD**: [docs/prds/prd-web-ops-console.md](../../prds/prd-web-ops-console.md)
 
 ## Implementation tracking (canonical)
 
@@ -11,7 +11,7 @@ For **AGENTS.md** spec-driven delivery:
 
 - **[tasks.md](./tasks.md)** is the **canonical** checklist for implementation status (backend, frontend, features, quality). Agents should update `tasks.md` when work completes.
 - **[verification.md](./verification.md)** records verification runs (automated commands, code-level spot checks for PRD FR-* items, and manual browser notes when performed).
-- The **PRD** ([tasks/prd-web-ops-console.md](../../../tasks/prd-web-ops-console.md)) remains the stakeholder-facing product contract; its per-story checkboxes are **kept in sync** with `tasks.md` when features ship so both views stay aligned.
+- The **PRD** ([docs/prds/prd-web-ops-console.md](../../prds/prd-web-ops-console.md)) remains the stakeholder-facing product contract; its per-story checkboxes are **kept in sync** with `tasks.md` when features ship so both views stay aligned.
 - Repo-wide enforcement: [AGENTS.md](../../../AGENTS.md) (**Documentation hierarchy**, **Agent boundaries**, **Definition of Done**) and Cursor rule [.cursor/rules/spec-driven-delivery.mdc](../../../.cursor/rules/spec-driven-delivery.mdc) (**alwaysApply**).
 
 ## Summary

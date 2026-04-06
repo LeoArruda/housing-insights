@@ -1,6 +1,6 @@
 # PRD: Web operations console (Vue)
 
-> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../AGENTS.md)), implementation status is canonical in [docs/specs/web-ops-console/tasks.md](../docs/specs/web-ops-console/tasks.md). Verification runs (automated commands, FR spot checks, manual browser notes) are logged in [docs/specs/web-ops-console/verification.md](../docs/specs/web-ops-console/verification.md). User-story acceptance checkboxes below are kept aligned with that `tasks.md` file.
+> **Checklist authority:** For spec-driven delivery ([AGENTS.md](../../AGENTS.md)), implementation status is canonical in [docs/specs/web-ops-console/tasks.md](../specs/web-ops-console/tasks.md). Verification runs (automated commands, FR spot checks, manual browser notes) are logged in [docs/specs/web-ops-console/verification.md](../specs/web-ops-console/verification.md). User-story acceptance checkboxes below are kept aligned with that `tasks.md` file.
 
 ## Introduction / overview
 
@@ -169,7 +169,7 @@ Operators and leadership need a **browser-based console** on top of the existing
 - **FR-8:** All JSON error responses from the API must be surfaced to the user in a consistent error component (message + optional details).
 - **FR-9:** UTC must be **labeled** on all schedule time fields (no silent local timezone).
 - **FR-10:** When dashboard keys are set in env, the API must enforce **Bearer** authentication and **viewer vs operator** rules per **Resolved decisions**; schedule mutations and schedule reads must return **403** for viewer tokens.
-- **FR-11:** Operators and viewers must be able to **browse and filter operational logs** (`GET /operations/logs`) and open a dedicated **Logs** route in the SPA; job run detail must surface **related logs** for that run. Canonical spec: [docs/specs/operational-logging/spec.md](../docs/specs/operational-logging/spec.md).
+- **FR-11:** Operators and viewers must be able to **browse and filter operational logs** (`GET /operations/logs`) and open a dedicated **Logs** route in the SPA; job run detail must surface **related logs** for that run. Canonical spec: [docs/specs/operational-logging/spec.md](../specs/operational-logging/spec.md).
 
 ---
 
@@ -260,4 +260,4 @@ These are **defaults for v1**; change via a spec amendment if product direction 
 - [x] Functional requirements numbered
 - [x] Non-goals explicit
 - [x] Open questions **resolved** (see § Resolved decisions)
-- [x] Saved to `tasks/prd-web-ops-console.md`
+- [x] Saved to `docs/prds/prd-web-ops-console.md`

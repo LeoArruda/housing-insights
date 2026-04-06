@@ -78,7 +78,7 @@ This slice documents stack work that supports the ops console but is **not** a s
 
 ## References
 
-- PRD: [tasks/prd-web-ops-console.md](../../../tasks/prd-web-ops-console.md)
+- PRD: [docs/prds/prd-web-ops-console.md](../../prds/prd-web-ops-console.md)
 - Existing schedules API: [apps/api/src/server/app.ts](../../../apps/api/src/server/app.ts)
 - Vue skill: [`.cursor/skills/vue/SKILL.md`](../../../.cursor/skills/vue/SKILL.md)
 - Vue template to follow: ['.vue-admin-ref'](../../../.vue-admin-ref/)

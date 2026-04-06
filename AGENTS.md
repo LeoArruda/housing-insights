@@ -98,12 +98,12 @@ docs/specs//
 | **tasks.md** | **Canonical** agent checklist — mark `[x]` when work is done | `docs/specs/<feature>/tasks.md` |
 | **spec.md** | Technical spec, resolved decisions, test scenarios | `docs/specs/<feature>/spec.md` |
 | **plan.md** | Implementation plan, phases, risks | `docs/specs/<feature>/plan.md` |
-| **PRD** (when used) | Stakeholder user stories / FR list; **keep story checkboxes aligned** with `tasks.md` | e.g. [tasks/prd-web-ops-console.md](tasks/prd-web-ops-console.md) |
+| **PRD** (when used) | Stakeholder user stories / FR list  **keep story checkboxes aligned** with `docs/specs/<feature>/tasks.md` | `docs/prds/prd-<feature-name>.md` |
 | **verification.md** (when present) | Log automated + manual verification after material changes | `docs/specs/<feature>/verification.md` |
 
 Rules:
 
-- Pick the correct **`docs/specs/<feature>/`** folder before coding; if none exists for new work, **Product Scope / Architect** creates the trio (`spec.md`, `plan.md`, `tasks.md`) first.
+- Pick the correct **`docs/specs/<feature>/`** folder before coding; if none exists for new work, **Orchestrator** sequences **PRD Agent** (optional PRD in `docs/prds/`) then **Product Scope / Architect** for the trio (`spec.md`, `plan.md`, `tasks.md`) as needed.
 - **Update `tasks.md`** in the same PR or session as the implementation.
 - **Foundation work** ([docs/scope.md](docs/scope.md)) still requires a **plan/tasks slice** in the affected feature spec (e.g. [docs/specs/web-ops-console/plan.md](docs/specs/web-ops-console/plan.md)) so stack changes are traceable.
 
@@ -115,6 +115,7 @@ Match work to **one primary owner** under [.cursor/agents/](.cursor/agents/). Cr
 |-------|-------------------|---------------|
 | **Orchestrator** | Sequencing, spec gates, conflict avoidance between agents | Owning a single code area by default |
 | **Product Scope** | Problem, acceptance criteria, `docs/specs/<feature>/spec.md` | Implementation |
+| **PRD Agent** | Stakeholder PRDs: `docs/prds/prd-<feature>.md`; user stories, goals, non-goals, FR/NFR aligned with downstream `tasks.md` | `spec.md` / `plan.md` / engineering `tasks.md`, architecture, code |
 | **Architect** | [docs/architecture.md](docs/architecture.md), ADRs, cross-app contracts | Feature code unless explicitly asked |
 | **Backend Developer** | `apps/api/**`, DB migrations, API behavior | `apps/web/**` UI |
 | **Frontend Developer** | `apps/web/**` | `apps/api/**` without coordinating API contract |
@@ -177,6 +178,12 @@ The system follows a layered ingestion model:
 - defines feature scope
 - writes `spec.md`
 - defines acceptance criteria
+
+---
+
+### PRD Agent
+- turns stakeholder needs into a structured PRD under `docs/prds/prd-<feature>.md`
+- does **not** own `docs/specs/<feature>/spec.md` (that is **Product Scope**); keeps PRD checkboxes aligned with `docs/specs/<feature>/tasks.md` when both exist
 
 ---
 

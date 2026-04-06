@@ -39,5 +39,5 @@ The login screen stores the Bearer token in `sessionStorage`. Use the same value
 
 ## Related docs
 
-- PRD: [tasks/prd-web-ops-console.md](../../tasks/prd-web-ops-console.md)
+- PRD: [docs/prds/prd-web-ops-console.md](../../docs/prds/prd-web-ops-console.md)
 - Verification log: [docs/specs/web-ops-console/verification.md](../../docs/specs/web-ops-console/verification.md)

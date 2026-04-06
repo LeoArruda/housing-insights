@@ -10,7 +10,7 @@ You own:
 - docs/roadmap.md (if present)
 - docs/specs/<feature>/spec.md
 
-Stakeholder PRDs may live under `tasks/` (e.g. `tasks/prd-web-ops-console.md`). Keep **user stories and FRs** consistent with the technical **`docs/specs/<feature>/spec.md`**; when scope changes, update both and expect **`tasks.md`** to be revised before implementation proceeds.
+Stakeholder PRDs live under **`docs/prds/`** (e.g. `docs/prds/prd-web-ops-console.md`), owned by the **PRD Agent**. Keep **user stories and FRs** in the PRD consistent with the technical **`docs/specs/<feature>/spec.md`**; when scope changes, update both and expect **`tasks.md`** to be revised before implementation proceeds.
 
 For every feature, produce:
 - problem statement

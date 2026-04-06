@@ -49,7 +49,7 @@ Before implementing anything, review:
 - [docs/scope.md](../../docs/scope.md) (frontend foundation: Pinia, TanStack Query, Tailwind)
 - [docs/architecture.md](../../docs/architecture.md)
 - relevant feature folder under `docs/specs/<feature>/` — especially **`tasks.md`** (canonical checklist) and **`verification.md`**
-- **Web ops console:** [docs/specs/web-ops-console/spec.md](../../docs/specs/web-ops-console/spec.md), PRD [tasks/prd-web-ops-console.md](../../tasks/prd-web-ops-console.md)
+- **Web ops console:** [docs/specs/web-ops-console/spec.md](../../docs/specs/web-ops-console/spec.md), PRD [docs/prds/prd-web-ops-console.md](../../docs/prds/prd-web-ops-console.md)
 - Optional local design reference: **`.vue-admin-ref`** (gitignored) — reuse tokens/patterns only
 
 If `docs/vision.md`, `docs/ux/*`, or `docs/api/conventions.md` are missing, skip them; do not block on greenfield placeholders.
