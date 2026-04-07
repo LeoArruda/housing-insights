@@ -12,7 +12,7 @@ const MAX_DETAIL_JSON = 32_000;
 
 export type OperationalLogInput = {
   source: string;
-  level: OperationalLogLevel;
+  level: OperationLogLevel;
   message: string;
   jobRunId?: number | null;
   detail?: Record<string, unknown> | null;

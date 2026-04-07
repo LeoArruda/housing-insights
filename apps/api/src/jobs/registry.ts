@@ -10,6 +10,7 @@ import {
 import { jobStatcanScheduledIngest } from "./statcan-scheduled.ts";
 import { jobStatcanSubjectChangedIngest } from "./statcan-subject-changed.ts";
 import { jobStatcanWdsDataNormalize } from "./statcan-wds-normalize.ts";
+import { jobStatcanBulkTrackedSync } from "./statcan-bulk-tracked-sync.ts";
 
 export const JOB_NAMES = [
   "statcan-rss",
@@ -21,6 +22,7 @@ export const JOB_NAMES = [
   "statcan-subject-changed-ingest",
   "boc-valet",
   "statcan-wds-data-normalize",
+  "statcan-bulk-tracked-sync",
 ] as const;
 
 export type JobName = (typeof JOB_NAMES)[number];
@@ -38,6 +40,7 @@ export const jobRegistry: Record<
   "statcan-subject-changed-ingest": jobStatcanSubjectChangedIngest,
   "boc-valet": jobBocValet,
   "statcan-wds-data-normalize": jobStatcanWdsDataNormalize,
+  "statcan-bulk-tracked-sync": jobStatcanBulkTrackedSync,
 };
 
 export function isJobName(value: string): value is JobName {

@@ -40,6 +40,7 @@ describe("runMigrations", () => {
     expect(names).toContain("statcan_wds_normalize_error");
     expect(names).toContain("operation_logs");
     expect(names).toContain("statcan_subject_subscriptions");
+    expect(names).toContain("statcan_tracked_datasets");
 
     runMigrations(db, migrationsDirectory());
     const versions = db
@@ -60,6 +61,9 @@ describe("runMigrations", () => {
     );
     expect(versions.filter((v) => v.version === "006_operation_logs").length).toBe(1);
     expect(versions.filter((v) => v.version === "007_statcan_wds_operator_ux").length).toBe(
+      1,
+    );
+    expect(versions.filter((v) => v.version === "008_statcan_tracked_datasets").length).toBe(
       1,
     );
 

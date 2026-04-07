@@ -39,6 +39,8 @@ const envSchema = z.object({
   STATCAN_DEFAULT_DATA_COORDINATE: z.string().optional(),
   STATCAN_DATA_VECTOR_IDS: z.string().default(""),
   STATCAN_REQUEST_DELAY_MS: z.coerce.number().min(0).default(200),
+  /** Concurrent tracked ProductIDs per `statcan-bulk-tracked-sync` job run. */
+  STATCAN_BULK_TRACKED_PARALLEL: z.coerce.number().min(1).max(20).default(3),
   /** Max `statcan-wds-data` raw rows processed per `statcan-wds-data-normalize` job run. */
   STATCAN_WDS_NORMALIZE_BATCH_LIMIT: z.coerce.number().min(1).max(5000).default(500),
 
@@ -54,6 +56,8 @@ const envSchema = z.object({
   DAEMON_STATCAN_WDS_DATA_CRON: z.string().default("30 6 * * *"),
   /** Tick for per-product StatCan schedules (`statcan-scheduled-ingest` job). */
   DAEMON_STATCAN_SCHEDULE_TICK_CRON: z.string().default("*/5 * * * *"),
+  /** If set (non-empty), daemon runs `statcan-bulk-tracked-sync` for due `statcan_tracked_datasets` rows. */
+  DAEMON_STATCAN_BULK_TRACKED_CRON: z.string().optional(),
   /** If set (non-empty), daemon runs `statcan-subject-changed-ingest` (global subject subscriptions × changed cubes). */
   DAEMON_STATCAN_SUBJECT_CHANGED_CRON: z.string().optional(),
   DAEMON_BOC_VALET_CRON: z.string().default("30 6 * * *"),

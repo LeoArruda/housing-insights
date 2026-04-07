@@ -15,6 +15,8 @@ const scheduleActive = computed(() => {
 
 const subscriptionsActive = computed(() => route.name === "subscriptions");
 
+const bulkTrackedActive = computed(() => route.name === "statcan-bulk");
+
 const jobsActive = computed(
   () => route.name === "jobs" || route.name === "jobs-detail",
 );
@@ -67,6 +69,13 @@ function navItemClass(active: boolean) {
           :class="navItemClass(subscriptionsActive)"
         >
           Subject feeds
+        </RouterLink>
+        <RouterLink
+          v-if="isOperator"
+          to="/statcan-bulk"
+          :class="navItemClass(bulkTrackedActive)"
+        >
+          Bulk datasets
         </RouterLink>
         <RouterLink
           to="/jobs"

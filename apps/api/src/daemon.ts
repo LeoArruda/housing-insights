@@ -62,6 +62,12 @@ schedule(
   "statcan-scheduled-ingest",
   () => runJobByName(ctx, "statcan-scheduled-ingest"),
 );
+const bulkTrackedCron = env.DAEMON_STATCAN_BULK_TRACKED_CRON?.trim();
+if (bulkTrackedCron) {
+  schedule(env, db, bulkTrackedCron, "statcan-bulk-tracked-sync", () =>
+    runJobByName(ctx, "statcan-bulk-tracked-sync"),
+  );
+}
 schedule(env, db, env.DAEMON_BOC_VALET_CRON, "boc-valet", () =>
   runJobByName(ctx, "boc-valet"),
 );

@@ -9,6 +9,10 @@ import * as statcanWdsNormRepo from "../db/repositories/statcan-wds-normalizatio
 import { StatCanClient } from "../connectors/statcan/statcan-client.ts";
 import * as statcanSchedulesRepo from "../db/repositories/statcan-product-schedules.ts";
 import * as statcanSubscriptionsRepo from "../db/repositories/statcan-subject-subscriptions.ts";
+import * as statcanTrackedRepo from "../db/repositories/statcan-tracked-datasets.ts";
+import type { StatcanTrackedDatasetWithCatalogRow } from "../db/repositories/statcan-tracked-datasets.ts";
+import { runBulkTrackedDatasetRefresh } from "../jobs/statcan-bulk-tracked-sync.ts";
+import type { JobContext } from "../jobs/runners.ts";
 import type { Env } from "../env.ts";
 import { sha256Hex } from "../util/hash.ts";
 import { computeNextRunAfter } from "../services/statcan-next-run.ts";
@@ -72,6 +76,65 @@ const createScheduleBodySchema = scheduleFieldsSchema.superRefine(
 const patchScheduleBodySchema = scheduleFieldsSchema
   .partial()
   .omit({ product_id: true });
+
+const downloadChannelSchema = z.enum([
+  "wds_full_table_csv",
+  "statcan_portal_zip",
+]);
+
+const trackedBodySchema = z.object({
+  product_id: z.number().int().positive(),
+  frequency: scheduleFrequencySchema,
+  hour_utc: z.number().int().min(0).max(23).default(6),
+  minute_utc: z.number().int().min(0).max(59).default(0),
+  day_of_week: z.number().int().min(0).max(6).nullable().optional(),
+  day_of_month: z.number().int().min(1).max(31).nullable().optional(),
+  download_channel: downloadChannelSchema.default("wds_full_table_csv"),
+  enabled: z.boolean().default(true),
+});
+
+const trackedCreateSchema = trackedBodySchema.superRefine((data, ctx) => {
+  if (data.frequency === "weekly" && data.day_of_week == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "day_of_week is required when frequency is weekly",
+      path: ["day_of_week"],
+    });
+  }
+  if (data.frequency === "monthly" && data.day_of_month == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "day_of_month is required when frequency is monthly",
+      path: ["day_of_month"],
+    });
+  }
+});
+
+const trackedPatchSchema = trackedBodySchema.partial().omit({ product_id: true });
+
+function trackedRowToJson(row: StatcanTrackedDatasetWithCatalogRow) {
+  return {
+    id: row.id,
+    product_id: row.product_id,
+    frequency: row.frequency,
+    hour_utc: row.hour_utc,
+    minute_utc: row.minute_utc,
+    day_of_week: row.day_of_week,
+    day_of_month: row.day_of_month,
+    download_channel: row.download_channel,
+    enabled: row.enabled === 1,
+    status: row.status,
+    last_full_download_at: row.last_full_download_at,
+    last_changed_check_at: row.last_changed_check_at,
+    last_changed_query_date: row.last_changed_query_date,
+    last_error: row.last_error,
+    next_run_at: row.next_run_at,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    cube_title_en: row.cube_title_en ?? null,
+    cube_title_fr: row.cube_title_fr ?? null,
+  };
+}
 
 function scheduleRowToJson(
   row: statcanSchedulesRepo.StatcanProductScheduleWithCatalogRow,
@@ -615,6 +678,120 @@ export function createApp(db: Database, env: Env) {
   });
 
   app.route("/statcan/subject-subscriptions", statcanSubscriptions);
+
+  const statcanTracked = new Hono();
+  statcanTracked.use(requireOperator({ db, env }));
+  statcanTracked.get("/", (c) => {
+    const rows = statcanTrackedRepo.listAllTrackedWithCatalog(db);
+    return c.json({ data: rows.map(trackedRowToJson) });
+  });
+  statcanTracked.post("/", async (c) => {
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = trackedCreateSchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    if (
+      statcanCatalogRepo.countCatalogRows(db) > 0 &&
+      !statcanCatalogRepo.catalogHasProduct(db, parsed.data.product_id)
+    ) {
+      return c.json(
+        { error: "product_id not found in statcan_cube_catalog" },
+        400,
+      );
+    }
+    if (statcanTrackedRepo.getTrackedByProductId(db, parsed.data.product_id)) {
+      return c.json({ error: "product_id already tracked" }, 409);
+    }
+    const id = statcanTrackedRepo.insertTrackedDataset(db, {
+      product_id: parsed.data.product_id,
+      frequency: parsed.data.frequency,
+      hour_utc: parsed.data.hour_utc,
+      minute_utc: parsed.data.minute_utc,
+      day_of_week: parsed.data.day_of_week ?? null,
+      day_of_month: parsed.data.day_of_month ?? null,
+      download_channel: parsed.data.download_channel,
+      enabled: parsed.data.enabled,
+    });
+    const row = statcanTrackedRepo.getTrackedByIdWithCatalog(db, id)!;
+    return c.json(trackedRowToJson(row), 201);
+  });
+  statcanTracked.patch("/:id", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+    const existing = statcanTrackedRepo.getTrackedById(db, id);
+    if (!existing) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    let bodyJson: unknown;
+    try {
+      bodyJson = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const parsed = trackedPatchSchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.flatten() }, 400);
+    }
+    const p = parsed.data;
+    const mergedFreq = (p.frequency ?? existing.frequency) as
+      | "daily"
+      | "weekly"
+      | "monthly";
+    const mergedHour = p.hour_utc ?? existing.hour_utc;
+    const mergedMin = p.minute_utc ?? existing.minute_utc;
+    const mergedDow =
+      p.day_of_week !== undefined ? p.day_of_week : existing.day_of_week;
+    const mergedDom =
+      p.day_of_month !== undefined ? p.day_of_month : existing.day_of_month;
+    const next = computeNextRunAfter(new Date(), {
+      frequency: mergedFreq,
+      hourUtc: mergedHour,
+      minuteUtc: mergedMin,
+      dayOfWeek: mergedDow,
+      dayOfMonth: mergedDom,
+    });
+    statcanTrackedRepo.updateTrackedDataset(db, id, {
+      ...p,
+      next_run_at: next.toISOString(),
+    });
+    const row = statcanTrackedRepo.getTrackedByIdWithCatalog(db, id)!;
+    return c.json(trackedRowToJson(row));
+  });
+  statcanTracked.delete("/:id", (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+    const ok = statcanTrackedRepo.deleteTrackedDataset(db, id);
+    if (!ok) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    return c.body(null, 204);
+  });
+  statcanTracked.post("/:id/refresh", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isFinite(id)) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+    const ctx: JobContext = { db, env };
+    try {
+      await runBulkTrackedDatasetRefresh(ctx, id);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return c.json({ error: msg }, 400);
+    }
+    const row = statcanTrackedRepo.getTrackedByIdWithCatalog(db, id);
+    return c.json({ ok: true, data: row ? trackedRowToJson(row) : null });
+  });
+  app.route("/statcan/tracked-datasets", statcanTracked);
 
   app.get("/statcan/wds/observations", (c) => {
     const q = c.req.query();

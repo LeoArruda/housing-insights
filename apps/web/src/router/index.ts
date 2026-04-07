@@ -51,6 +51,13 @@ const router = createRouter({
             import("../views/subscriptions/SubjectSubscriptionsView.vue"),
         },
         {
+          path: "statcan-bulk",
+          name: "statcan-bulk",
+          meta: { operatorOnly: true },
+          component: () =>
+            import("../views/tracked/TrackedDatasetsView.vue"),
+        },
+        {
           path: "jobs",
           name: "jobs",
           component: () => import("../views/jobs/JobsListView.vue"),

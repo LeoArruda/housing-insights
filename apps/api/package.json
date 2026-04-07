@@ -15,6 +15,7 @@
     "@housing-insights/types": "workspace:*",
     "croner": "^9.0.0",
     "fast-xml-parser": "^4.5.0",
+    "fflate": "^0.8.2",
     "hono": "^4.7.0",
     "zod": "^3.24.0"
   },

@@ -136,8 +136,12 @@ export async function jobStatcanCatalogIndex(ctx: JobContext): Promise<void> {
     let inserted = 0;
 
     for (const row of rows) {
-      if (isArchivedCube(row.archived)) continue;
-      const scores = scoreCubeTitles(row.cubeTitleEn, row.cubeTitleFr, buckets);
+      if (isArchivedCube(row.archived ?? undefined)) continue;
+      const scores = scoreCubeTitles(
+        row.cubeTitleEn ?? undefined,
+        row.cubeTitleFr ?? undefined,
+        buckets,
+      );
       if (scores.housingScore < min && scores.macroScore < min) continue;
 
       statcanCatalogRepo.upsertCubeCatalog(ctx.db, {
